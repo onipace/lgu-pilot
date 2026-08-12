@@ -1,0 +1,217 @@
+{
+  "workflow": {
+    "name": "PILLAR LIKHA + LINAW Legislative Pipeline",
+    "session_id": "pillar-likha-linaw-20260809",
+    "revision": "v2 (2026-08-09): bidirectional LIKHA-LINAW independence; LINAW owns its ingestion and linaw_ordinances library",
+    "type": "sequential",
+    "requires_voice": false,
+    "pipelines": [
+      {
+        "module": "likha",
+        "name": "LIKHA Digitization Pipeline",
+        "agent_count": 6,
+        "total_delay_ms": 7400,
+        "input_methods": ["file_upload"],
+        "agents": [
+          {
+            "id": 1,
+            "name": "Ingestor",
+            "description": "Validates uploads, computes file hashes, stores raw file records",
+            "function_name": "ingestFiles",
+            "color": { "name": "Amber", "hex": "#F59E0B", "rgb": "245, 158, 11", "glow_class": "glow-amber" },
+            "delay_ms": 1000,
+            "input": ["files"],
+            "output": ["fileHash", "originalFilename", "mimeType"],
+            "output_label": "Files validated & hashed"
+          },
+          {
+            "id": 2,
+            "name": "OCR Extractor",
+            "description": "Extracts text from PDFs/images via module-owned OpenRouter wrapper",
+            "function_name": "extractText",
+            "color": { "name": "Emerald", "hex": "#10B981", "rgb": "16, 185, 129", "glow_class": "glow-emerald" },
+            "delay_ms": 1600,
+            "input": ["fileHash", "mimeType"],
+            "output": ["rawText", "pageCount", "ocrConfidence"],
+            "output_label": "Text extracted"
+          },
+          {
+            "id": 3,
+            "name": "Metadata Parser",
+            "description": "Parses ordinance number, series year, title, section count",
+            "function_name": "parseMetadata",
+            "color": { "name": "Violet", "hex": "#8B5CF6", "rgb": "139, 92, 246", "glow_class": "glow-violet" },
+            "delay_ms": 1400,
+            "input": ["rawText"],
+            "output": ["ordinanceNumber", "seriesYear", "title", "sectionCount", "confidence"],
+            "output_label": "Metadata parsed"
+          },
+          {
+            "id": 4,
+            "name": "Subject Classifier",
+            "description": "Suggests subject categories with confidence scores",
+            "function_name": "classifySubject",
+            "color": { "name": "Sky", "hex": "#0EA5E9", "rgb": "14, 165, 233", "glow_class": "glow-sky" },
+            "delay_ms": 1200,
+            "input": ["rawText", "title"],
+            "output": ["subjects"],
+            "output_label": "Subjects suggested"
+          },
+          {
+            "id": 5,
+            "name": "Legal Validator",
+            "description": "Flags low-confidence extractions; raises HITL gates",
+            "function_name": "validateExtraction",
+            "color": { "name": "Rose", "hex": "#F43F5E", "rgb": "244, 63, 94", "glow_class": "glow-rose" },
+            "delay_ms": 1200,
+            "input": ["ordinanceNumber", "seriesYear", "title", "confidence", "subjects"],
+            "output": ["hitlRequired", "exceptions"],
+            "output_label": "Validation complete"
+          },
+          {
+            "id": 6,
+            "name": "Archiver",
+            "description": "Publishes verified records and updates the BM25 index",
+            "function_name": "publishToArchive",
+            "color": { "name": "Indigo", "hex": "#6366F1", "rgb": "99, 102, 241", "glow_class": "glow-indigo" },
+            "delay_ms": 1000,
+            "input": ["humanDecision", "ordinanceNumber", "seriesYear", "title", "rawText", "subjects"],
+            "output": ["archiveStatus", "bm25Indexed"],
+            "output_label": "Published to archive"
+          }
+        ]
+      },
+      {
+        "module": "linaw",
+        "name": "LINAW Codification Pipeline",
+        "agent_count": 6,
+        "total_delay_ms": 7900,
+        "input_methods": ["file_upload", "bulk_import", "manual_entry", "corpus_trigger"],
+        "agents": [
+          {
+            "id": 1,
+            "name": "Inventory Analyst",
+            "description": "Computes inventory completeness and year gaps",
+            "function_name": "analyzeInventory",
+            "color": { "name": "Amber", "hex": "#F59E0B", "rgb": "245, 158, 11", "glow_class": "glow-amber" },
+            "delay_ms": 1100,
+            "input": ["linawLibrary"],
+            "output": ["completenessScore", "yearGaps", "totals"],
+            "output_label": "Inventory analyzed"
+          },
+          {
+            "id": 2,
+            "name": "Code Classifier",
+            "description": "Assigns ordinances to Code Titles/Chapters",
+            "function_name": "classifyToCode",
+            "color": { "name": "Violet", "hex": "#8B5CF6", "rgb": "139, 92, 246", "glow_class": "glow-violet" },
+            "delay_ms": 1300,
+            "input": ["linawLibrary", "librarySubjects"],
+            "output": ["codePlacement"],
+            "output_label": "Code placement assigned"
+          },
+          {
+            "id": 3,
+            "name": "Cross-Reference Scanner",
+            "description": "Detects amendment/repeal/supersede relationships",
+            "function_name": "scanCrossReferences",
+            "color": { "name": "Emerald", "hex": "#10B981", "rgb": "16, 185, 129", "glow_class": "glow-emerald" },
+            "delay_ms": 1600,
+            "input": ["linawLibrary"],
+            "output": ["relationships"],
+            "output_label": "Relationships detected"
+          },
+          {
+            "id": 4,
+            "name": "Conflict Detector",
+            "description": "Flags semantic contradictions across ordinances",
+            "function_name": "detectConflicts",
+            "color": { "name": "Rose", "hex": "#F43F5E", "rgb": "244, 63, 94", "glow_class": "glow-rose" },
+            "delay_ms": 1500,
+            "input": ["linawLibrary", "relationships"],
+            "output": ["conflicts"],
+            "output_label": "Conflicts flagged"
+          },
+          {
+            "id": 5,
+            "name": "Relationship Reviewer",
+            "description": "Presents relationships for human confirmation (HITL)",
+            "function_name": "reviewRelationships",
+            "color": { "name": "Cyan", "hex": "#22D3EE", "rgb": "34, 211, 238", "glow_class": "glow-cyan" },
+            "delay_ms": 1100,
+            "input": ["relationships", "conflicts"],
+            "output": ["hitlRequired", "confirmedRelationships"],
+            "output_label": "Awaiting human review"
+          },
+          {
+            "id": 6,
+            "name": "Code Assembler",
+            "description": "Builds hierarchical Code of Ordinances with TOC",
+            "function_name": "assembleCode",
+            "color": { "name": "Indigo", "hex": "#6366F1", "rgb": "99, 102, 241", "glow_class": "glow-indigo" },
+            "delay_ms": 1300,
+            "input": ["codePlacement", "confirmedRelationships", "summaries"],
+            "output": ["toc", "codeVolumeId"],
+            "output_label": "Code assembled"
+          }
+        ]
+      }
+    ],
+    "callbacks": {
+      "onAgentStart": "Set agent status to 'processing'; apply glow class + animate-pulse-glow",
+      "onAgentComplete": "Set status to 'completed'; show output preview; if output.hitlRequired then set status to 'hitl' and pause",
+      "onHitlRequired": "Pause pipeline; add rose-bordered HITL card to activity feed with Review/Confirm/Edit actions",
+      "onHumanDecision": "Resume pipeline (confirm/edit) or terminate branch (reject); persist decision to agent_decisions",
+      "onPipelineComplete": "Set isProcessing=false; glow output icon; add success activity",
+      "onError": "Set status to 'error'; log error; offer retry once then escalate to HITL"
+    },
+    "hitl_gates": [
+      { "gate": "low_confidence_metadata", "trigger": "confidence < 0.7 on number/year/title", "role": "SB Secretary / Admin" },
+      { "gate": "low_confidence_classification", "trigger": "classification confidence < 0.6", "role": "SB Secretary / Legal Officer" },
+      { "gate": "detected_relationship", "trigger": "cross-reference or conflict found", "role": "SB Member / Legal Officer" },
+      { "gate": "code_placement", "trigger": "classifier confidence < 0.7", "role": "Legal Officer / Admin" },
+      { "gate": "final_code_export", "trigger": "before PDF/DOCX export", "role": "SB Member / Admin" }
+    ],
+    "data_rules": {
+      "likha": [
+        "File hash computed before OCR for duplicate detection",
+        "OCR: google/gemini-2.5-flash for PDFs, qwen/qwen3.7-plus for images, temperature 0",
+        "Metadata extraction returns structured JSON with per-field confidence",
+        "Classifier maps subjects to Code Titles/Chapters taxonomy",
+        "Archiver runs only after human confirmation; edits are logged"
+      ],
+      "linaw": [
+        "Ingestion is LINAW-owned: bulk import / scan upload (own OCR) / manual entry write to linaw_ordinances; agents only see library_status='ready' records",
+        "Inventory reads only linaw_ordinances with library_status='ready' — never LIKHA tables",
+        "Code Classifier uses the library's own subject metadata as priors",
+        "Cross-Reference Scanner links ordinance numbers found in text to linaw_ordinances records",
+        "Conflict Detector compares sections under the same subject",
+        "Code Assembler renumbers sections and emits JSON + TOC"
+      ]
+    },
+    "exception_rules": {
+      "likha": [
+        "Duplicate file hash -> warning; skip OCR; surface existing record",
+        "OCR timeout >60s -> error; retry once; then HITL",
+        "Missing ordinance number -> HITL gate with manual entry",
+        "Classification confidence <0.6 -> HITL gate with override dropdown"
+      ],
+      "linaw": [
+        "Orphan reference (target not in linaw_ordinances library) -> warning 'missing target'",
+        "Conflicting statuses on same ordinance -> error; human resolution required",
+        "Multiple amendment chains -> warning; visualize chain",
+        "Relationship confidence <0.6 -> HITL gate with side-by-side comparison"
+      ]
+    },
+    "ui_specs": {
+      "agent_card": { "height": "h-56", "badge": "top-left circular number", "status_icons": ["Loader2", "Check", "AlertTriangle", "Hand"], "output_section": "h-8 with border-top" },
+      "pipeline_layout": { "direction": "horizontal", "input_bookend": "Brain icon, cyan glow when processing", "output_bookend": "Database icon, green glow on completion", "connectors": "arrow icons", "responsive": "wrap on mobile" },
+      "activity_feed": { "empty_state": "No activities yet. Start a pipeline to see results.", "pending_actions": ["Confirm", "Edit"], "editable_fields": ["ordinanceNumber", "seriesYear", "title", "sectionCount", "subject", "status"], "confirmed_badge": "green pill with checkmark" },
+      "animations": {
+        "glow": "box-shadow 0 0 20px rgba(agent_rgb, 0.3)",
+        "pulse": "opacity 1 -> 0.6 -> 1, 1.5s ease-in-out infinite",
+        "recording": null
+      }
+    }
+  }
+}

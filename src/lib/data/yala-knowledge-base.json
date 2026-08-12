@@ -1,0 +1,245 @@
+{
+  "municipality": {
+    "name": "Municipality of Pitogo",
+    "province": "Province of Quezon",
+    "region": "CALABARZON (Region IV-A)",
+    "zip_code": "4308",
+    "founded": "January 25, 1681",
+    "population": "22,499 (2020 Census)",
+    "area_km2": "73.39",
+    "income_class": "4th Income Class",
+    "barangay_count": 39,
+    "address": "Municipal Hall, Poblacion, Pitogo, Quezon 4308",
+    "phone": "(042) 717-5000",
+    "email": "sb@pitogo.gov.ph",
+    "website": "https://pitogo.esangguni.ph"
+  },
+  "barangays": [
+    "Poblacion", "Amontay", "Biga", "Binahaan", "Bukal", "Bulo",
+    "Buyao", "Castillo", "Catangawan", "Concepcion", "Corcuera",
+    "Danlagan", "Del Pilar", "Hagnaya", "Ibabang Burgos",
+    "Ibabang Ilaya", "Ibabang Sico", "Ilayang Burgos",
+    "Ilayang Ilaya", "Ilayang Sico", "Ipil", "Kinagunan",
+    "Loba", "Mabini", "Malaking Patag", "Mamala", "Manato",
+    "Maravilla", "Mataas na Lupa", "Mayabobo", "Mojon",
+    "Montaña", "Nabangka", "Pag-asa", "Plaridel", "Rizal",
+    "San Francisco", "San Roque", "Silangan"
+  ],
+  "officials": {
+    "vice_mayor": {
+      "name": "Hon. Paul Timothy C. Villaflor",
+      "position": "Vice Mayor / Presiding Officer",
+      "committee": "Rules & Privileges"
+    },
+    "sb_members": [
+      {"name": "Kag. Gene I. Llaneta", "committee": "Finance & Appropriations"},
+      {"name": "Kag. Benedicta M. Lozada", "committee": "Health & Sanitation"},
+      {"name": "Kag. Esperanza A. Tan", "committee": "Education & Culture"},
+      {"name": "Kag. Rodel P. Forbes", "committee": "Infrastructure & Public Works"},
+      {"name": "Kag. Karl Anthonie A. De Asis", "committee": "Agriculture & Environment"},
+      {"name": "Kag. Carlo L. Jaranilla", "committee": "Peace & Order"},
+      {"name": "Kag. Aram O. Livado", "committee": "Trade & Commerce"},
+      {"name": "Kag. Alexander A. Mosquite", "committee": "Tourism & Heritage"}
+    ],
+    "ex_officio": [
+      {"name": "Hon. De Asis", "title": "PPSK President", "committee": "Youth & Sports"},
+      {"name": "Hon. Fidel M. Malapit", "title": "PPLB President", "committee": "Barangay Affairs"}
+    ],
+    "sb_secretary": "Lilibeth P. Leynes"
+  },
+  "services": [
+    {
+      "name": "Business Permit (New Application)",
+      "office": "Business Permits and Licensing Office (BPLO)",
+      "requirements": [
+        "Barangay Clearance",
+        "DTI/SEC/CDA Registration",
+        "Community Tax Certificate (Cedula)",
+        "Lease Contract or Land Title (proof of business address)",
+        "2x2 ID Photo (2 copies)",
+        "Fire Safety Inspection Certificate",
+        "Sanitary Permit from Municipal Health Office",
+        "Zoning Clearance"
+      ],
+      "fees": "Varies based on business type, capitalization, and gross sales",
+      "processing_time": "3-5 working days",
+      "steps": [
+        "Secure Barangay Clearance from your barangay",
+        "Get Zoning Clearance from the Municipal Planning Office",
+        "Obtain Sanitary Permit from the Municipal Health Office",
+        "Get Fire Safety Inspection Certificate from BFP",
+        "Submit all requirements to the BPLO",
+        "Pay the assessed fees at the Municipal Treasurer's Office",
+        "Claim your Business Permit"
+      ]
+    },
+    {
+      "name": "Business Permit (Renewal)",
+      "office": "Business Permits and Licensing Office (BPLO)",
+      "requirements": [
+        "Previous year's Business Permit",
+        "Barangay Clearance (updated)",
+        "Community Tax Certificate (Cedula)",
+        "Updated DTI/SEC Registration (if applicable)",
+        "Fire Safety Inspection Certificate",
+        "Sanitary Permit (renewed)"
+      ],
+      "fees": "Based on declared gross sales/receipts from previous year",
+      "processing_time": "1-3 working days",
+      "steps": [
+        "Secure updated Barangay Clearance",
+        "Renew Fire Safety and Sanitary Permits",
+        "Submit requirements to BPLO",
+        "Pay fees at Municipal Treasurer's Office",
+        "Claim renewed permit"
+      ],
+      "deadline": "January 20 of each year (late renewals subject to surcharge)"
+    },
+    {
+      "name": "Barangay Clearance",
+      "office": "Barangay Hall (respective barangay of residence/business)",
+      "requirements": [
+        "Valid government-issued ID",
+        "Community Tax Certificate (Cedula)"
+      ],
+      "fees": "PHP 50-100 (varies per barangay)",
+      "processing_time": "Same day (if Barangay Captain is available)",
+      "steps": [
+        "Visit your Barangay Hall",
+        "Fill out the application form",
+        "Present your valid ID and Cedula",
+        "Pay the fee",
+        "Receive your Barangay Clearance"
+      ]
+    },
+    {
+      "name": "Birth Certificate (Local Civil Registry)",
+      "office": "Municipal Civil Registrar's Office",
+      "requirements": [
+        "Request form (available at the office)",
+        "Valid ID of the requesting party",
+        "Authorization letter (if not the document owner)"
+      ],
+      "fees": "PHP 155 (certified true copy)",
+      "processing_time": "Same day to 1 working day"
+    },
+    {
+      "name": "Marriage Certificate (Local Civil Registry)",
+      "office": "Municipal Civil Registrar's Office",
+      "requirements": [
+        "Request form",
+        "Valid ID of requesting party",
+        "Authorization letter (if not one of the parties)"
+      ],
+      "fees": "PHP 155 (certified true copy)",
+      "processing_time": "Same day to 1 working day"
+    },
+    {
+      "name": "Death Certificate (Local Civil Registry)",
+      "office": "Municipal Civil Registrar's Office",
+      "requirements": [
+        "Request form",
+        "Valid ID of requesting party",
+        "Proof of relationship to the deceased"
+      ],
+      "fees": "PHP 155 (certified true copy)",
+      "processing_time": "Same day to 1 working day"
+    },
+    {
+      "name": "Real Property Tax (RPT) Payment",
+      "office": "Municipal Treasurer's Office",
+      "requirements": [
+        "Tax Declaration Number or Owner's Name",
+        "Previous Official Receipt (if available)"
+      ],
+      "fees": "Based on assessed value of property (basic rate + SEF)",
+      "processing_time": "Immediate upon payment",
+      "notes": "Quarterly payments accepted. Deadline: January 31 (annual), or quarterly (Mar 31, Jun 30, Sep 30, Dec 31). Early payment discount available."
+    },
+    {
+      "name": "Community Tax Certificate (Cedula)",
+      "office": "Municipal Treasurer's Office",
+      "requirements": [
+        "Valid ID",
+        "For individuals: declaration of gross income",
+        "For corporations: declaration of gross receipts"
+      ],
+      "fees": "Basic tax PHP 5.00 + additional tax based on income/property",
+      "processing_time": "Immediate (over the counter)"
+    },
+    {
+      "name": "Building Permit",
+      "office": "Municipal Engineering Office",
+      "requirements": [
+        "Duly accomplished application form",
+        "Lot plan/survey plan",
+        "Architectural plans (signed by licensed architect)",
+        "Structural plans (signed by licensed engineer)",
+        "Electrical plans",
+        "Sanitary/Plumbing plans",
+        "Bill of materials and cost estimate",
+        "Land title or authorization from lot owner",
+        "Barangay Clearance",
+        "Zoning Clearance",
+        "Fire Safety Evaluation Clearance"
+      ],
+      "fees": "Based on total project cost and floor area",
+      "processing_time": "7-15 working days"
+    },
+    {
+      "name": "Zoning Clearance",
+      "office": "Municipal Planning and Development Office (MPDO)",
+      "requirements": [
+        "Application form",
+        "Location plan/sketch",
+        "Land title or lease contract",
+        "Barangay Clearance"
+      ],
+      "fees": "PHP 100-500 (depending on land use classification)",
+      "processing_time": "1-3 working days"
+    }
+  ],
+  "office_hours": {
+    "municipal_hall": "Monday to Friday, 8:00 AM - 5:00 PM (no noon break)",
+    "sanggunian_sessions": "Every Monday, 9:00 AM at the SB Session Hall",
+    "note": "Offices may be closed during national holidays and local fiestas"
+  },
+  "esangguni_platform": {
+    "about": "eSANGGUNI is the AI-powered digital governance platform of the Sangguniang Bayan ng Pitogo, designed to improve legislative efficiency and citizen access to local government services.",
+    "modules": {
+      "ella": {
+        "name": "E.L.L.A. (Executive & Legislative Legal Assistant)",
+        "description": "AI legal research tool for Sanggunian members. Provides instant access to R.A. 7160 (Local Government Code), its IRR, and all 349 Pitogo municipal ordinances with citation-backed answers.",
+        "audience": "Sangguniang Bayan members and staff"
+      },
+      "obra": {
+        "name": "O.B.R.A. (Ordinance Builder & Review Assistant)",
+        "description": "AI-powered ordinance drafting and compliance review tool. Generates properly structured municipal ordinances and checks drafts for legal compliance with R.A. 7160.",
+        "audience": "Sangguniang Bayan members and legislative staff"
+      },
+      "yala": {
+        "name": "Y.A.L.A. (Your AI Legislative Assistant)",
+        "description": "Citizen-facing AI chatbot providing information about Pitogo municipal services, requirements, fees, and local ordinances in simple conversational language.",
+        "audience": "Citizens of Pitogo and the general public"
+      }
+    }
+  },
+  "frequently_asked": [
+    {
+      "question": "Where is the Municipal Hall located?",
+      "answer": "The Municipal Hall is located at Poblacion, Pitogo, Quezon 4308. It is the center of local government operations."
+    },
+    {
+      "question": "What are the office hours?",
+      "answer": "Municipal Hall offices are open Monday to Friday, 8:00 AM to 5:00 PM with no noon break."
+    },
+    {
+      "question": "How do I file a complaint?",
+      "answer": "You may file a complaint at the Sangguniang Bayan Office or the Mayor's Office during regular office hours. Bring a written complaint letter and valid ID."
+    },
+    {
+      "question": "When are the Sanggunian sessions?",
+      "answer": "Regular sessions of the Sangguniang Bayan are held every Monday at 9:00 AM at the SB Session Hall. Sessions are open to the public."
+    }
+  ]
+}

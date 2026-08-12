@@ -1,0 +1,250 @@
+   ▲ Next.js 15.3.8
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 9.0s
+   Linting and checking validity of types ...
+
+./src/app/admin/deployments/page.tsx
+53:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/ecs/new/page.tsx
+58:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/ecs/page.tsx
+16:3  Warning: 'Key' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'ChevronDown' is defined but never used.  @typescript-eslint/no-unused-vars
+54:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/admin/users/page.tsx
+5:48  Warning: 'ChevronDown' is defined but never used.  @typescript-eslint/no-unused-vars
+6:44  Warning: 'Shield' is defined but never used.  @typescript-eslint/no-unused-vars
+80:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+89:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/deployments/route.ts
+7:45  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+20:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/deployments/[id]/action/route.ts
+42:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+49:13  Warning: 'imageTag' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/admin/deployments/[id]/route.ts
+59:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/ecs/credentials/route.ts
+7:10  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+7:19  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+23:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+51:19  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+71:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/ecs/route.ts
+8:10  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+8:19  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+39:19  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/admin/ecs/[id]/health/route.ts
+41:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/ecs/[id]/route.ts
+65:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/admin/kb/documents/route.ts
+7:45  Warning: '_session' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/chat/route.ts
+10:27  Warning: 'buildRAGContext' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/linaw/import/route.ts
+11:10  Warning: 'NextRequest' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/login/page.tsx
+69:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/pending/page.tsx
+9:10  Warning: 'loading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ella/citation-viewer-modal.tsx
+6:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/likha/camera-scanner.tsx
+172:6  Warning: React Hook useEffect has a missing dependency: 'stopCamera'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+226:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+256:5  Warning: React Hook useCallback has a missing dependency: 'startOverlayLoop'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+273:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+723:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+897:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/likha/scan-effect.tsx
+24:68  Warning: 'onCancel' is defined but never used.  @typescript-eslint/no-unused-vars
+154:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+165:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+295:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+342:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/obra/draft-reviewer.tsx
+155:6  Warning: React Hook useEffect has missing dependencies: 'isMaximized', 'modalSize.h', and 'modalSize.w'. Either include them or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setModalPos' needs the current value of 'modalSize.w'.  react-hooks/exhaustive-deps
+554:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/pillar/module-card.tsx
+28:3  Warning: 'buttonClass' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/pillar/user-auth-gate.tsx
+21:10  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+21:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+37:15  Warning: 'data' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/yala/yala-chat.tsx
+50:10  Warning: 'elapsedSec' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+174:11  Warning: 'content' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/auth-middleware.ts
+8:13  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+15:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/auth.ts
+41:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+72:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/citation-doc-id.ts
+37:13  Warning: 'padded2' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/likha/document-processor.ts
+33:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+35:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+38:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+46:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+56:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+56:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+57:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+78:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:7  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+120:22  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+257:73  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+257:98  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+259:74  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+259:100  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+266:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/user-auth-middleware.ts
+15:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+28:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+60:35  Warning: A `require()` style import is forbidden.  @typescript-eslint/no-require-imports
+
+./src/lib/user-auth.ts
+175:11  Warning: 'password_hash' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+206:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+311:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+347:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+368:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+393:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/middleware.ts
+11:7  Warning: 'AUTH_PATHS' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+20:9  Warning: 'domainAttr' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/65) ...
+   Generating static pages (16/65) 
+   Generating static pages (32/65) 
+   Generating static pages (48/65) 
+ ✓ Generating static pages (65/65)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    14.7 kB         121 kB
+├ ○ /_not-found                            990 B         103 kB
+├ ○ /admin                                117 kB         223 kB
+├ ○ /admin/deployments                   5.21 kB         107 kB
+├ ○ /admin/deployments/new               3.55 kB         106 kB
+├ ○ /admin/ecs                           4.67 kB         107 kB
+├ ○ /admin/ecs/new                       3.01 kB         105 kB
+├ ○ /admin/kb                            5.88 kB         112 kB
+├ ○ /admin/kb/upload                     3.97 kB         110 kB
+├ ○ /admin/login                         2.63 kB         105 kB
+├ ○ /admin/users                         4.22 kB         106 kB
+├ ƒ /api/admin/deployments                 287 B         102 kB
+├ ƒ /api/admin/deployments/[id]            287 B         102 kB
+├ ƒ /api/admin/deployments/[id]/action     287 B         102 kB
+├ ƒ /api/admin/ecs                         287 B         102 kB
+├ ƒ /api/admin/ecs/[id]                    287 B         102 kB
+├ ƒ /api/admin/ecs/[id]/health             287 B         102 kB
+├ ƒ /api/admin/ecs/credentials             287 B         102 kB
+├ ƒ /api/admin/export                      287 B         102 kB
+├ ƒ /api/admin/kb/documents                287 B         102 kB
+├ ƒ /api/admin/kb/documents/[id]           287 B         102 kB
+├ ƒ /api/admin/kb/reindex                  287 B         102 kB
+├ ƒ /api/admin/kb/stats                    287 B         102 kB
+├ ƒ /api/admin/kb/upload                   287 B         102 kB
+├ ƒ /api/admin/sessions                    287 B         102 kB
+├ ƒ /api/admin/stats                       287 B         102 kB
+├ ƒ /api/admin/users                       287 B         102 kB
+├ ƒ /api/admin/users/[id]                  287 B         102 kB
+├ ƒ /api/auth/login                        287 B         102 kB
+├ ƒ /api/auth/logout                       287 B         102 kB
+├ ƒ /api/auth/me                           287 B         102 kB
+├ ƒ /api/auth/register                     287 B         102 kB
+├ ƒ /api/auth/user/login                   287 B         102 kB
+├ ƒ /api/auth/user/logout                  287 B         102 kB
+├ ƒ /api/auth/user/me                      287 B         102 kB
+├ ƒ /api/chat                              287 B         102 kB
+├ ƒ /api/documents/[id]                    287 B         102 kB
+├ ƒ /api/health                            287 B         102 kB
+├ ƒ /api/likha/archive                     287 B         102 kB
+├ ƒ /api/likha/archive/[id]                287 B         102 kB
+├ ƒ /api/likha/archive/[id]/scan           287 B         102 kB
+├ ƒ /api/likha/classify                    287 B         102 kB
+├ ƒ /api/likha/classify/[id]               287 B         102 kB
+├ ƒ /api/likha/export-dilg                 287 B         102 kB
+├ ƒ /api/likha/export-package              287 B         102 kB
+├ ƒ /api/likha/pipeline                    287 B         102 kB
+├ ƒ /api/likha/stats                       287 B         102 kB
+├ ƒ /api/likha/upload                      287 B         102 kB
+├ ƒ /api/linaw/assemble                    287 B         102 kB
+├ ƒ /api/linaw/classify                    287 B         102 kB
+├ ƒ /api/linaw/classify/[id]               287 B         102 kB
+├ ƒ /api/linaw/code                        287 B         102 kB
+├ ƒ /api/linaw/code/[id]                   287 B         102 kB
+├ ƒ /api/linaw/conflicts                   287 B         102 kB
+├ ƒ /api/linaw/detect-relationships        287 B         102 kB
+├ ƒ /api/linaw/export-package              287 B         102 kB
+├ ƒ /api/linaw/import                      287 B         102 kB
+├ ƒ /api/linaw/inventory                   287 B         102 kB
+├ ƒ /api/linaw/library                     287 B         102 kB
+├ ƒ /api/linaw/library/[id]                287 B         102 kB
+├ ƒ /api/linaw/library/[id]/scan           287 B         102 kB
+├ ƒ /api/linaw/relationships               287 B         102 kB
+├ ƒ /api/linaw/relationships/[id]          287 B         102 kB
+├ ƒ /api/linaw/summarize                   287 B         102 kB
+├ ƒ /api/linaw/summarize/[id]              287 B         102 kB
+├ ƒ /api/linaw/upload                      287 B         102 kB
+├ ƒ /api/obra/draft                        287 B         102 kB
+├ ƒ /api/obra/extract                      287 B         102 kB
+├ ƒ /api/obra/fix                          287 B         102 kB
+├ ƒ /api/obra/review                       287 B         102 kB
+├ ○ /dashboard                           5.46 kB         111 kB
+├ ○ /ella                                25.9 kB         157 kB
+├ ○ /likha                               24.3 kB         140 kB
+├ ○ /linaw                               19.1 kB         135 kB
+├ ○ /login                               2.66 kB         109 kB
+├ ○ /obra                                 255 kB         380 kB
+├ ○ /pending                             1.68 kB         108 kB
+├ ○ /register                            3.72 kB         110 kB
+└ ○ /yala                                4.28 kB         133 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1684-379ed0440658bc15.js      46.6 kB
+  ├ chunks/4bd1b696-a5506e5fe46193db.js  53.2 kB
+  └ other shared chunks (total)          2.24 kB
+
+
+ƒ Middleware                             33.2 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

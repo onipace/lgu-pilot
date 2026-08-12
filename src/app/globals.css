@@ -1,0 +1,260 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── eSANGGUNI Design System ─────────────────────────────────────
+       Dark theme optimized for projector display in conference rooms.
+       High contrast, large readable type, clear visual hierarchy.
+    ──────────────────────────────────────────────────────────────── */
+
+    /* Core backgrounds */
+    --pillar-bg:           222 47% 7%;        /* #0A0F1E deep navy-black */
+    --pillar-surface:      222 39% 12%;       /* #131B2E slate-900-ish */
+    --pillar-surface-alt:  224 35% 17%;       /* #1C2640 card bg */
+
+    /* Brand colors */
+    --pillar-primary:      239 84% 67%;       /* #5B69F5 indigo — authority */
+    --pillar-teal:         174 72% 36%;       /* #17A97D teal — innovation */
+    --pillar-gold:         38 95% 55%;        /* #F5A623 warm gold — eSANGGUNI brand */
+
+    /* Text */
+    --pillar-text:         214 100% 97%;      /* #F0F6FF near-white */
+    --pillar-muted:        216 20% 55%;       /* #7A8DAA muted slate */
+    --pillar-border:       224 27% 22%;       /* #283147 subtle border */
+
+    /* Module accents */
+    --ella-accent:         239 76% 64%;       /* #5A6EF0 indigo */
+    --obra-accent:         158 64% 45%;       /* #28C47B emerald */
+    --yala-accent:         38 95% 55%;        /* #F5A623 amber */
+    --likha-accent:        14 87% 55%;        /* #E85D26 orange-red */
+    --linaw-accent:        199 89% 48%;       /* #1BA3D9 cyan-blue */
+
+    /* shadcn base tokens mapped to dark eSANGGUNI theme */
+    --background:          222 47% 7%;
+    --foreground:          214 100% 97%;
+    --card:                224 35% 17%;
+    --card-foreground:     214 100% 97%;
+    --popover:             224 35% 15%;
+    --popover-foreground:  214 100% 97%;
+    --primary:             239 84% 67%;
+    --primary-foreground:  222 47% 7%;
+    --secondary:           224 35% 22%;
+    --secondary-foreground:214 100% 97%;
+    --muted:               224 35% 20%;
+    --muted-foreground:    216 20% 55%;
+    --accent:              174 72% 36%;
+    --accent-foreground:   214 100% 97%;
+    --destructive:         0 72% 51%;
+    --destructive-foreground: 214 100% 97%;
+    --border:              224 27% 22%;
+    --input:               224 35% 20%;
+    --ring:                239 84% 67%;
+    --radius:              0.75rem;
+
+    /* ── Gradients ────────────────────────────────────────────── */
+    --pillar-hero-gradient:
+      linear-gradient(
+        135deg,
+        hsl(239 60% 12%) 0%,
+        hsl(222 47% 9%)  40%,
+        hsl(174 50% 10%) 100%
+      );
+
+    --pillar-card-gradient:
+      linear-gradient(
+        145deg,
+        hsl(224 35% 19%) 0%,
+        hsl(224 35% 14%) 100%
+      );
+
+    --ella-card-gradient:
+      linear-gradient(
+        135deg,
+        hsl(239 50% 20%) 0%,
+        hsl(239 35% 14%) 100%
+      );
+
+    --obra-card-gradient:
+      linear-gradient(
+        135deg,
+        hsl(158 45% 16%) 0%,
+        hsl(158 35% 11%) 100%
+      );
+
+    --yala-card-gradient:
+      linear-gradient(
+        135deg,
+        hsl(38 60% 18%) 0%,
+        hsl(38 40% 12%) 100%
+      );
+
+    /* ── Glows ───────────────────────────────────────────────── */
+    --pillar-glow:    0 0 32px hsl(239 84% 67% / 0.25), 0 4px 24px hsl(222 47% 4% / 0.6);
+    --ella-glow:      0 0 24px hsl(239 76% 64% / 0.30), 0 4px 16px hsl(222 47% 4% / 0.5);
+    --obra-glow:      0 0 24px hsl(158 64% 45% / 0.30), 0 4px 16px hsl(222 47% 4% / 0.5);
+    --yala-glow:      0 0 24px hsl(38 95% 55% / 0.30),  0 4px 16px hsl(222 47% 4% / 0.5);
+    --likha-glow:     0 0 24px hsl(14 87% 55% / 0.30),  0 4px 16px hsl(222 47% 4% / 0.5);
+    --linaw-glow:     0 0 24px hsl(199 89% 48% / 0.30), 0 4px 16px hsl(222 47% 4% / 0.5);
+  }
+}
+
+/* ── Global base styles ─────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Projector-friendly: generous base size, smooth scrolling */
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--pillar-bg));
+    color: hsl(var(--pillar-text));
+    font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar styling — slim dark */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--pillar-bg)); }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--pillar-border));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--pillar-muted)); }
+}
+
+/* ── eSANGGUNI Component utilities ─────────────────────────────────── */
+@layer components {
+  /* Workshop banner — gold strip */
+  .workshop-banner {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--pillar-gold)) 0%,
+      hsl(38 90% 60%)         100%
+    );
+    color: hsl(222 47% 9%);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* Module card base */
+  .pillar-module-card {
+    background: hsl(var(--pillar-surface-alt));
+    border: 1px solid hsl(var(--pillar-border));
+    border-radius: var(--radius);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .pillar-module-card:hover {
+    transform: translateY(-2px);
+  }
+  .pillar-module-card.ella:hover {
+    border-color: hsl(var(--ella-accent) / 0.6);
+    box-shadow: var(--ella-glow);
+  }
+  .pillar-module-card.obra:hover {
+    border-color: hsl(var(--obra-accent) / 0.6);
+    box-shadow: var(--obra-glow);
+  }
+  .pillar-module-card.yala:hover {
+    border-color: hsl(var(--yala-accent) / 0.6);
+    box-shadow: var(--yala-glow);
+  }
+  .pillar-module-card.likha:hover {
+    border-color: hsl(var(--likha-accent) / 0.6);
+    box-shadow: var(--likha-glow);
+  }
+  .pillar-module-card.linaw:hover {
+    border-color: hsl(var(--linaw-accent) / 0.6);
+    box-shadow: var(--linaw-glow);
+  }
+
+  /* Chat message bubbles — dark theme */
+  .chat-bubble-user {
+    background: hsl(var(--pillar-primary));
+    color: hsl(var(--pillar-text));
+    border-radius: 1rem 1rem 0.25rem 1rem;
+  }
+  .chat-bubble-assistant {
+    background: hsl(var(--pillar-surface-alt));
+    border: 1px solid hsl(var(--pillar-border));
+    color: hsl(var(--pillar-text));
+    border-radius: 1rem 1rem 1rem 0.25rem;
+  }
+  .chat-bubble-user.ella   { background: hsl(var(--ella-accent)); }
+  .chat-bubble-user.yala   { background: hsl(var(--yala-accent)); color: hsl(222 47% 9%); }
+  .chat-bubble-user.obra   { background: hsl(var(--obra-accent)); }
+
+  /* Sample prompt pill */
+  .prompt-pill {
+    background: hsl(var(--pillar-surface));
+    border: 1px solid hsl(var(--pillar-border));
+    color: hsl(var(--pillar-muted));
+    border-radius: 9999px;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .prompt-pill:hover {
+    border-color: hsl(var(--pillar-primary) / 0.6);
+    color: hsl(var(--pillar-text));
+    background: hsl(var(--pillar-surface-alt));
+  }
+  .prompt-pill.ella:hover  { border-color: hsl(var(--ella-accent) / 0.6); }
+  .prompt-pill.obra:hover  { border-color: hsl(var(--obra-accent) / 0.6); }
+  .prompt-pill.yala:hover  { border-color: hsl(var(--yala-accent) / 0.6); }
+
+  /* Glassy stat card */
+  .stat-card {
+    background: hsl(var(--pillar-surface-alt));
+    border: 1px solid hsl(var(--pillar-border));
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+  }
+
+  /* Typing bounce dots */
+  .typing-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: hsl(var(--pillar-muted));
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(1) { animation-delay: 0ms; }
+  .typing-dot:nth-child(2) { animation-delay: 150ms; }
+  .typing-dot:nth-child(3) { animation-delay: 300ms; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+}
+
+/* ── LIKHA + LINAW shared agentic kit utilities (Sprint 1 — append-only) ─────────────── */
+
+:root { --bg-primary: #0F1729; --bg-secondary: #1E293B; --text-primary: #FFFFFF; --text-secondary: #94A3B8; --accent-primary: #0038A8; --accent-ai: #22D3EE; }
+
+.glow-amber   { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+.glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+.glow-violet  { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+.glow-sky     { box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); }
+.glow-rose    { box-shadow: 0 0 20px rgba(244, 63, 94, 0.3); }
+.glow-indigo  { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+.glow-cyan    { box-shadow: 0 0 30px rgba(34, 211, 238, 0.4); }
+
+@keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.animate-pulse-glow { animation: pulse-glow 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .animate-pulse-glow { animation: none; } }

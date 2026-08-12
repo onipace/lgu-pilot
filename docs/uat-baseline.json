@@ -1,0 +1,31 @@
+{
+  "taken_at": "2026-08-10T00:05:00.000Z",
+  "db_path": "/data/pillar-pilot.db",
+  "table_counts": {
+    "users": 6,
+    "user_sessions": 101,
+    "archived_ordinances": 1,
+    "classifications": 0,
+    "amendment_links": 0,
+    "linaw_ordinances": 0,
+    "codification_records": 0,
+    "ordinance_relationships": 0,
+    "code_volumes": 0,
+    "agent_decisions": 157,
+    "interaction_logs": 141
+  },
+  "bm25_totalDocs": {
+    "likha": 0,
+    "linaw": 0
+  },
+  "upload_file_counts": {
+    "likha": 0,
+    "linaw": 0
+  },
+  "preexisting_uat_markers": {
+    "archived_uat": 1,
+    "linaw_uat": 0,
+    "uat_user": 1,
+    "note": "UAT user and 1 archived_ordinance with UAT-PROBE prefix exist from prior attempt; will be cleaned in UAT-041"
+  }
+}

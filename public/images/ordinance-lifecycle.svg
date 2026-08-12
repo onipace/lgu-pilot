@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220" width="1200" height="220" role="img" aria-labelledby="ordinance-lifecycle-title">
+  <title id="ordinance-lifecycle-title">eSANGGUNI Ordinance Lifecycle: 7 stages powered by AI</title>
+  <defs>
+    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5B69F5;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#17A97D;stop-opacity:0.6" />
+    </linearGradient>
+    <style>
+      @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+      .step-icon { animation: pulse 2.5s ease-in-out infinite; }
+      .s1 { animation-delay: 0s; } .s2 { animation-delay: 0.35s; } .s3 { animation-delay: 0.7s; }
+      .s4 { animation-delay: 1.05s; } .s5 { animation-delay: 1.4s; } .s6 { animation-delay: 1.75s; } .s7 { animation-delay: 2.1s; }
+      .st { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="220" rx="16" fill="#0D1117"/>
+
+  <!-- Badge -->
+  <rect x="370" y="16" width="460" height="32" rx="16" fill="rgba(245,166,35,0.1)" stroke="rgba(245,166,35,0.3)" stroke-width="1"/>
+  <text x="600" y="37" class="st" font-size="13" font-weight="700" fill="#F5A623" text-anchor="middle">AI-Assisted at Every Stage of the Ordinance Lifecycle</text>
+
+  <!-- Flow line -->
+  <line x1="100" y1="110" x2="1100" y2="110" stroke="url(#flowGrad)" stroke-width="2" stroke-dasharray="6 4" opacity="0.5"/>
+
+  <!-- Stage 1: Research -->
+  <g transform="translate(30, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(91,105,245,0.12)" stroke="#5B69F5" stroke-width="1.5" class="step-icon s1"/>
+    <circle cx="40" cy="32" r="10" fill="none" stroke="#5B69F5" stroke-width="1.5"/>
+    <line x1="40" y1="42" x2="40" y2="52" stroke="#5B69F5" stroke-width="1.5"/>
+    <line x1="34" y1="48" x2="46" y2="48" stroke="#5B69F5" stroke-width="1.5"/>
+    <circle cx="52" cy="24" r="3" fill="#F5A623" opacity="0.8"/>
+  </g>
+  <text x="70" y="155" class="st" font-size="13" font-weight="700" fill="#5B69F5" text-anchor="middle">1. Research</text>
+  <polygon points="122,106 130,110 122,114" fill="#5B69F5" opacity="0.6"/>
+
+  <!-- Stage 2: Drafting -->
+  <g transform="translate(190, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(40,196,123,0.12)" stroke="#28C47B" stroke-width="1.5" class="step-icon s2"/>
+    <rect x="30" y="24" width="20" height="28" rx="2" fill="none" stroke="#28C47B" stroke-width="1.5"/>
+    <line x1="34" y1="31" x2="46" y2="31" stroke="#28C47B" stroke-width="1.2"/>
+    <line x1="34" y1="36" x2="46" y2="36" stroke="#28C47B" stroke-width="1.2"/>
+    <line x1="34" y1="41" x2="42" y2="41" stroke="#28C47B" stroke-width="1.2"/>
+    <line x1="44" y1="44" x2="50" y2="38" stroke="#F5A623" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <text x="230" y="155" class="st" font-size="13" font-weight="700" fill="#28C47B" text-anchor="middle">2. Drafting</text>
+  <polygon points="282,106 290,110 282,114" fill="#28C47B" opacity="0.6"/>
+
+  <!-- Stage 3: Compliance -->
+  <g transform="translate(350, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(245,166,35,0.12)" stroke="#F5A623" stroke-width="1.5" class="step-icon s3"/>
+    <path d="M40 24 L52 48 L28 48 Z" fill="none" stroke="#F5A623" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="40" y1="34" x2="40" y2="40" stroke="#F5A623" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="40" cy="44" r="1.5" fill="#F5A623"/>
+  </g>
+  <text x="390" y="155" class="st" font-size="13" font-weight="700" fill="#F5A623" text-anchor="middle">3. Compliance</text>
+  <polygon points="442,106 450,110 442,114" fill="#F5A623" opacity="0.6"/>
+
+  <!-- Stage 4: Archiving -->
+  <g transform="translate(510, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(232,93,38,0.12)" stroke="#E85D26" stroke-width="1.5" class="step-icon s4"/>
+    <rect x="28" y="26" width="24" height="20" rx="2" fill="none" stroke="#E85D26" stroke-width="1.5"/>
+    <rect x="32" y="22" width="16" height="6" rx="1" fill="none" stroke="#E85D26" stroke-width="1.2"/>
+    <line x1="34" y1="34" x2="46" y2="34" stroke="#E85D26" stroke-width="1"/>
+    <line x1="34" y1="38" x2="44" y2="38" stroke="#E85D26" stroke-width="1"/>
+    <line x1="34" y1="42" x2="42" y2="42" stroke="#E85D26" stroke-width="1"/>
+  </g>
+  <text x="550" y="155" class="st" font-size="13" font-weight="700" fill="#E85D26" text-anchor="middle">4. Archiving</text>
+  <polygon points="602,106 610,110 602,114" fill="#E85D26" opacity="0.6"/>
+
+  <!-- Stage 5: Codification -->
+  <g transform="translate(670, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(27,163,217,0.12)" stroke="#1BA3D9" stroke-width="1.5" class="step-icon s5"/>
+    <rect x="28" y="24" width="24" height="32" rx="2" fill="none" stroke="#1BA3D9" stroke-width="1.5"/>
+    <line x1="34" y1="32" x2="46" y2="32" stroke="#1BA3D9" stroke-width="1.2"/>
+    <line x1="34" y1="37" x2="46" y2="37" stroke="#1BA3D9" stroke-width="1.2"/>
+    <line x1="34" y1="42" x2="46" y2="42" stroke="#1BA3D9" stroke-width="1.2"/>
+    <line x1="34" y1="47" x2="40" y2="47" stroke="#1BA3D9" stroke-width="1.2"/>
+    <polyline points="44,44 48,48 54,40" fill="none" stroke="#17A97D" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <text x="710" y="155" class="st" font-size="13" font-weight="700" fill="#1BA3D9" text-anchor="middle">5. Codification</text>
+  <polygon points="762,106 770,110 762,114" fill="#1BA3D9" opacity="0.6"/>
+
+  <!-- Stage 6: Lineage -->
+  <g transform="translate(830, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(91,105,245,0.12)" stroke="#5B69F5" stroke-width="1.5" class="step-icon s6"/>
+    <circle cx="30" cy="34" r="6" fill="none" stroke="#5B69F5" stroke-width="1.5"/>
+    <circle cx="50" cy="34" r="6" fill="none" stroke="#5B69F5" stroke-width="1.5"/>
+    <circle cx="40" cy="48" r="6" fill="none" stroke="#5B69F5" stroke-width="1.5"/>
+    <line x1="35" y1="38" x2="37" y2="44" stroke="#5B69F5" stroke-width="1.2"/>
+    <line x1="45" y1="38" x2="43" y2="44" stroke="#5B69F5" stroke-width="1.2"/>
+    <line x1="36" y1="34" x2="44" y2="34" stroke="#5B69F5" stroke-width="1.2"/>
+  </g>
+  <text x="870" y="155" class="st" font-size="13" font-weight="700" fill="#5B69F5" text-anchor="middle">6. Lineage</text>
+  <polygon points="922,106 930,110 922,114" fill="#5B69F5" opacity="0.6"/>
+
+  <!-- Stage 7: Insighting -->
+  <g transform="translate(990, 60)">
+    <circle cx="40" cy="40" r="34" fill="rgba(23,169,125,0.12)" stroke="#17A97D" stroke-width="1.5" class="step-icon s7"/>
+    <rect x="28" y="28" width="24" height="20" rx="2" fill="none" stroke="#17A97D" stroke-width="1.5"/>
+    <polyline points="32,42 37,36 42,40 48,30" fill="none" stroke="#17A97D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="30" r="2.5" fill="#17A97D"/>
+  </g>
+  <text x="1030" y="155" class="st" font-size="13" font-weight="700" fill="#17A97D" text-anchor="middle">7. Insighting</text>
+
+</svg>

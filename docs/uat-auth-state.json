@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "pillar_user_session",
+      "value": "2dc2defaf61cfcf364150ae7ab4de4d618f02c36d24ae538919bc9246ead9712",
+      "domain": ".pillar.bayanaihan.net",
+      "path": "/",
+      "expires": 1786329006.744307,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

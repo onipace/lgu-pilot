@@ -1,0 +1,126 @@
+{
+  "workflow": {
+    "name": "PILLAR LINAW Codification Pipeline",
+    "module": "linaw",
+    "session_id": "pillar-likha-linaw-20260809",
+    "revision": "v2.1 (2026-08-09): module-isolated workflow definition (split edition); standalone SKU in both directions; LINAW owns ingestion + linaw_ordinances library; L1 export per docs/INTERCHANGE-SPEC.md",
+    "type": "sequential",
+    "requires_voice": false,
+    "pipeline": {
+      "module": "linaw",
+      "name": "LINAW Codification Pipeline",
+      "agent_count": 6,
+      "total_delay_ms": 7900,
+      "input_methods": ["file_upload", "bulk_import", "manual_entry", "corpus_trigger"],
+      "agents": [
+        {
+          "id": 1,
+          "name": "Inventory Analyst",
+          "description": "Computes inventory completeness and year gaps",
+          "function_name": "analyzeInventory",
+          "color": { "name": "Amber", "hex": "#F59E0B", "rgb": "245, 158, 11", "glow_class": "glow-amber" },
+          "delay_ms": 1100,
+          "input": ["linawLibrary"],
+          "output": ["completenessScore", "yearGaps", "totals"],
+          "output_label": "Inventory analyzed"
+        },
+        {
+          "id": 2,
+          "name": "Code Classifier",
+          "description": "Assigns ordinances to Code Titles/Chapters",
+          "function_name": "classifyToCode",
+          "color": { "name": "Violet", "hex": "#8B5CF6", "rgb": "139, 92, 246", "glow_class": "glow-violet" },
+          "delay_ms": 1300,
+          "input": ["linawLibrary", "librarySubjects"],
+          "output": ["codePlacement"],
+          "output_label": "Code placement assigned"
+        },
+        {
+          "id": 3,
+          "name": "Cross-Reference Scanner",
+          "description": "Detects amendment/repeal/supersede relationships",
+          "function_name": "scanCrossReferences",
+          "color": { "name": "Emerald", "hex": "#10B981", "rgb": "16, 185, 129", "glow_class": "glow-emerald" },
+          "delay_ms": 1600,
+          "input": ["linawLibrary"],
+          "output": ["relationships"],
+          "output_label": "Relationships detected"
+        },
+        {
+          "id": 4,
+          "name": "Conflict Detector",
+          "description": "Flags semantic contradictions across ordinances",
+          "function_name": "detectConflicts",
+          "color": { "name": "Rose", "hex": "#F43F5E", "rgb": "244, 63, 94", "glow_class": "glow-rose" },
+          "delay_ms": 1500,
+          "input": ["linawLibrary", "relationships"],
+          "output": ["conflicts"],
+          "output_label": "Conflicts flagged"
+        },
+        {
+          "id": 5,
+          "name": "Relationship Reviewer",
+          "description": "Presents relationships for human confirmation (HITL)",
+          "function_name": "reviewRelationships",
+          "color": { "name": "Cyan", "hex": "#22D3EE", "rgb": "34, 211, 238", "glow_class": "glow-cyan" },
+          "delay_ms": 1100,
+          "input": ["relationships", "conflicts"],
+          "output": ["hitlRequired", "confirmedRelationships"],
+          "output_label": "Awaiting human review"
+        },
+        {
+          "id": 6,
+          "name": "Code Assembler",
+          "description": "Builds hierarchical Code of Ordinances with TOC",
+          "function_name": "assembleCode",
+          "color": { "name": "Indigo", "hex": "#6366F1", "rgb": "99, 102, 241", "glow_class": "glow-indigo" },
+          "delay_ms": 1300,
+          "input": ["codePlacement", "confirmedRelationships", "summaries"],
+          "output": ["toc", "codeVolumeId"],
+          "output_label": "Code assembled"
+        }
+      ]
+    },
+    "callbacks": {
+      "onAgentStart": "Set agent status to 'processing'; apply glow class + animate-pulse-glow",
+      "onAgentComplete": "Set status to 'completed'; show output preview; if output.hitlRequired then set status to 'hitl' and pause",
+      "onHitlRequired": "Pause pipeline; add rose-bordered HITL card to activity feed with Review/Confirm/Edit actions",
+      "onHumanDecision": "Resume pipeline (confirm/edit) or terminate branch (reject); persist decision to agent_decisions",
+      "onPipelineComplete": "Set isProcessing=false; glow output icon; add success activity",
+      "onError": "Set status to 'error'; log error; offer retry once then escalate to HITL"
+    },
+    "hitl_gates": [
+      { "gate": "low_confidence_classification", "trigger": "classification confidence < 0.6", "role": "SB Secretary / Legal Officer" },
+      { "gate": "detected_relationship", "trigger": "cross-reference or conflict found", "role": "SB Member / Legal Officer" },
+      { "gate": "code_placement", "trigger": "classifier confidence < 0.7", "role": "Legal Officer / Admin" },
+      { "gate": "final_code_export", "trigger": "before PDF/DOCX export", "role": "SB Member / Admin" }
+    ],
+    "data_rules": [
+      "Ingestion is LINAW-owned: bulk import / scan upload (own OCR) / manual entry write to linaw_ordinances; agents only see library_status='ready' records",
+      "Inventory reads only linaw_ordinances with library_status='ready' — never any other module's tables",
+      "Code Classifier uses the library's own subject metadata as priors",
+      "Cross-Reference Scanner links ordinance numbers found in text to linaw_ordinances records",
+      "Conflict Detector compares sections under the same subject",
+      "Code Assembler renumbers sections and emits JSON + TOC",
+      "All reads/writes target LINAW-owned tables only (linaw_ordinances, codification_records, ordinance_relationships, code_volumes, agent_decisions module-scoped rows)",
+      "L1 interchange export (POST /api/linaw/export-package) follows docs/INTERCHANGE-SPEC.md exactly"
+    ],
+    "exception_rules": [
+      "Orphan reference (target not in linaw_ordinances library) -> warning 'missing target'",
+      "Conflicting statuses on same ordinance -> error; human resolution required",
+      "Multiple amendment chains -> warning; visualize chain",
+      "Relationship confidence <0.6 -> HITL gate with side-by-side comparison",
+      "OCR timeout >60s on scan upload -> error; retry once; then HITL manual entry"
+    ],
+    "ui_specs": {
+      "agent_card": { "height": "h-56", "badge": "top-left circular number", "status_icons": ["Loader2", "Check", "AlertTriangle", "Hand"], "output_section": "h-8 with border-top" },
+      "pipeline_layout": { "direction": "horizontal", "input_bookend": "Brain icon, cyan glow when processing", "output_bookend": "Database icon, green glow on completion", "connectors": "arrow icons", "responsive": "wrap on mobile" },
+      "activity_feed": { "empty_state": "No activities yet. Start a pipeline to see results.", "pending_actions": ["Confirm", "Edit"], "editable_fields": ["ordinanceNumber", "seriesYear", "title", "relationshipType", "sectionRef", "status"], "confirmed_badge": "green pill with checkmark" },
+      "animations": {
+        "glow": "box-shadow 0 0 20px rgba(agent_rgb, 0.3)",
+        "pulse": "opacity 1 -> 0.6 -> 1, 1.5s ease-in-out infinite",
+        "recording": null
+      }
+    }
+  }
+}

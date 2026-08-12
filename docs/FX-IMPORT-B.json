@@ -1,0 +1,18 @@
+{
+  "records": [
+    {
+      "ordinanceNumber": 9901,
+      "seriesYear": 2090,
+      "title": "UAT-PROBE Solid Waste Management Ordinance",
+      "content": "An ordinance establishing a comprehensive solid waste management program for the Municipality of Pitogo, amending Ordinance No. 9902, S. 2091, and providing funds thereof. Section 1. All households shall segregate waste into biodegradable, non-biodegradable, and recyclable categories. Section 2. A materials recovery facility shall be established in each barangay.",
+      "subjectTags": ["environment"]
+    },
+    {
+      "ordinanceNumber": 9904,
+      "seriesYear": 2093,
+      "title": "UAT-PROBE Fire Safety Ordinance",
+      "content": "An ordinance establishing fire safety regulations for all establishments within the Municipality of Pitogo. Section 1. All commercial establishments shall maintain functional fire extinguishers. Section 2. Annual fire safety inspections shall be conducted by the Bureau of Fire Protection.",
+      "subjectTags": ["safety"]
+    }
+  ]
+}

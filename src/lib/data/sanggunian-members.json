@@ -1,0 +1,137 @@
+[
+  {
+    "id": "vm-villaflor",
+    "name": "Paul Timothy C. Villaflor",
+    "honorific": "Hon.",
+    "position": "Vice Mayor / Presiding Officer",
+    "committee": "Rules & Privileges",
+    "photo": "/images/sb-members/vm-villaflor.jpg",
+    "backdropColor": "#26617e",
+    "order": 1,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-llaneta",
+    "name": "Gene I. Llaneta",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Finance & Appropriations",
+    "photo": "/images/sb-members/sb-llaneta.jpg",
+    "backdropColor": "#1e536e",
+    "order": 2,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-lozada",
+    "name": "Benedicta M. Lozada",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Health & Sanitation",
+    "photo": "/images/sb-members/sb-lozada.jpg",
+    "backdropColor": "#3f89a9",
+    "order": 3,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-tan",
+    "name": "Dominic Eison A. Tan",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Education & Culture",
+    "photo": "/images/sb-members/sb-tan.jpg",
+    "backdropColor": "#9d9d9d",
+    "order": 4,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-forbes",
+    "name": "Rodel P. Forbes",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Infrastructure & Public Works",
+    "photo": "/images/sb-members/sb-forbes.jpg",
+    "backdropColor": "#27617e",
+    "order": 5,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-deasis",
+    "name": "Karl Anthonie A. De Asis",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Agriculture & Environment",
+    "photo": "/images/sb-members/sb-deasis.jpg",
+    "backdropColor": "#2e7290",
+    "order": 6,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-jaranilla",
+    "name": "Carlo L. Jaranilla",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Peace & Order",
+    "photo": "/images/sb-members/sb-jaranilla.jpg",
+    "backdropColor": "#1e4e68",
+    "order": 7,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-livado",
+    "name": "Aram O. Livado",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Trade & Commerce",
+    "photo": "/images/sb-members/sb-livado.jpg",
+    "backdropColor": "#296584",
+    "order": 8,
+    "isExOfficio": false
+  },
+  {
+    "id": "sb-mosquite",
+    "name": "Alexander A. Mosquite",
+    "honorific": "Kag.",
+    "position": "SB Member",
+    "committee": "Tourism & Heritage",
+    "photo": "/images/sb-members/sb-mosquite.jpg",
+    "backdropColor": "#265e7a",
+    "order": 9,
+    "isExOfficio": false
+  },
+  {
+    "id": "ex-narvaez-ppsk",
+    "name": "Jan Alaric G. Narvaez",
+    "honorific": "Hon.",
+    "position": "Ex-Officio Member",
+    "committee": "Youth & Sports",
+    "photo": "/images/sb-members/ex-narvaez-ppsk.jpg",
+    "backdropColor": "#867966",
+    "order": 10,
+    "isExOfficio": true,
+    "exOfficioTitle": "PPSK President"
+  },
+  {
+    "id": "ex-maano-pplb",
+    "name": "Petronilo O. Maano",
+    "honorific": "Hon.",
+    "position": "Ex-Officio Member",
+    "committee": "Barangay Affairs",
+    "photo": "/images/sb-members/ex-maano-pplb.jpg",
+    "backdropColor": "#d5d2ce",
+    "order": 11,
+    "isExOfficio": true,
+    "exOfficioTitle": "PPLB President"
+  },
+  {
+    "id": "sec-leynes",
+    "name": "Lilibeth P. Leynes",
+    "honorific": "Sec.",
+    "position": "SB Secretary",
+    "committee": "Secretariat",
+    "photo": "/images/sb-members/sec-leynes.jpg",
+    "backdropColor": "#27617f",
+    "order": 12,
+    "isExOfficio": false,
+    "exOfficioTitle": "Sanggunian Secretary"
+  }
+]

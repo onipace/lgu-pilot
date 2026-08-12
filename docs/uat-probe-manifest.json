@@ -1,0 +1,224 @@
+{
+  "uat_user_id": "f6be4105-2aa6-4556-867d-98c7421b1595",
+  "uat_user_email": "uat-likha-linaw@bayanaihan.net",
+  "uat_user_password": "UAT-2026-Pillar!",
+  "created_records": [
+    {
+      "id": "073b82ed-8141-487c-b943-7521e3c0b8b1",
+      "module": "likha",
+      "original_filename": "UAT-PROBE-ordinance-01.pdf",
+      "file_hash": "369a09ec05194dbd86bffead48c6832d2667f1baa19f955c8b78109e",
+      "archive_status": "published",
+      "title": "An ordinance revising the schedule of business permit fees [verified]",
+      "ordinance_number": 5,
+      "series_year": 2023,
+      "verified_by_id": "f6be4105-2aa6-4556-867d-98c7421b1595",
+      "created_at": "2026-08-10 01:37:37",
+      "notes": "Uploaded in UAT-001, pipeline in UAT-004, approved in UAT-006"
+    },
+    {
+      "id": "a88d09f5-e65b-41b2-b6ff-46afe2baeae1",
+      "module": "likha",
+      "original_filename": "UAT-PROBE-scan-01.png",
+      "file_hash": "7023c39eace2c03c",
+      "archive_status": "published",
+      "title": "UAT-PROBE TRICYCLE REGISTRATION ORDINANCE [verified]",
+      "notes": "Pre-existing from prior attempt, tracked for cleanup"
+    },
+    {
+      "id": "98546993-7bf3-4735-832c-8df2ced50660",
+      "module": "linaw",
+      "ordinance_number": 9901,
+      "series_year": 2090,
+      "title": "UAT-PROBE Solid Waste Management Ordinance",
+      "source_type": "import",
+      "library_status": "ready",
+      "status": "repealed",
+      "notes": "Imported in UAT-017, classified in UAT-023, relationship confirmed (repealed by 9902) in UAT-026"
+    },
+    {
+      "id": "4a558b0e-958d-4df6-bc64-1927a1451e79",
+      "module": "linaw",
+      "ordinance_number": 9902,
+      "series_year": 2091,
+      "title": "UAT-PROBE Tricycle Registration Ordinance",
+      "source_type": "import",
+      "library_status": "ready",
+      "status": "active",
+      "notes": "Imported in UAT-017, classified in UAT-023, summarized in UAT-030"
+    },
+    {
+      "id": "dfd5db61-8ff1-497d-a315-afa88e04ad58",
+      "module": "linaw",
+      "ordinance_number": 9904,
+      "series_year": 2093,
+      "title": "UAT-PROBE Fire Safety Ordinance",
+      "source_type": "import",
+      "library_status": "ready",
+      "status": "active",
+      "notes": "Imported in UAT-018 (FX-IMPORT-B), classified in UAT-023, summarized in UAT-030"
+    },
+    {
+      "id": "e7051548-3ec4-4333-9064-b27a8df773de",
+      "module": "linaw",
+      "ordinance_number": 9905,
+      "series_year": 2094,
+      "title": "UAT-PROBE Tricycle Franchise Ordinance",
+      "source_type": "manual",
+      "library_status": "ready",
+      "status": "active",
+      "notes": "Manual entry in UAT-019, conflict detected with 9906 in UAT-025"
+    },
+    {
+      "id": "c1346343-d133-49e8-89b0-9e3def0c4fb9",
+      "module": "linaw",
+      "ordinance_number": 9906,
+      "series_year": 2095,
+      "title": "UAT-PROBE Tricycle Deregulation Ordinance",
+      "source_type": "manual",
+      "library_status": "ready",
+      "status": "active",
+      "notes": "Manual entry in UAT-019, conflict detected with 9905 in UAT-025"
+    },
+    {
+      "id": "d96359e0-7762-4dad-a16c-a4df026a0718",
+      "module": "linaw",
+      "title": "Processing — UAT-PROBE-linaw-scan.png",
+      "source_type": "scan",
+      "library_status": "ready",
+      "file_hash": "c414cd0e204de974f73753c7e28d7638e7b3691bb8b1a2bab6b25bb7fed7ce77",
+      "notes": "Scan uploaded in UAT-020, OCR failed (70-byte fixture), approved to ready"
+    }
+  ],
+  "created_files": [
+    {
+      "filename": "UAT-PROBE-ordinance-01.pdf",
+      "hash": "369a09ec05194dbd86bffead48c6832d2667f1baa19f955c8b78109e",
+      "size_bytes": 647,
+      "mime_type": "application/pdf"
+    },
+    {
+      "filename": "UAT-PROBE-scan-01.png",
+      "hash": "c414cd0e204de974f73753c7e28d7638e7b3691bb8b1a2bab6b25bb7fed7ce77",
+      "size_bytes": 70,
+      "mime_type": "image/png"
+    },
+    {
+      "filename": "UAT-PROBE-linaw-scan.png",
+      "hash": "c414cd0e204de974f73753c7e28d7638e7b3691bb8b1a2bab6b25bb7fed7ce77",
+      "size_bytes": 70,
+      "mime_type": "image/png"
+    },
+    {
+      "filename": "FX-IMPORT-A.json",
+      "hash": "computed-at-import",
+      "size_bytes": 1380,
+      "mime_type": "application/json",
+      "notes": "3 records: 9901/2090, 9902/2091, 9903/2092"
+    },
+    {
+      "filename": "FX-IMPORT-B.json",
+      "hash": "computed-at-import",
+      "size_bytes": 780,
+      "mime_type": "application/json",
+      "notes": "2 records: 9901/2090 (dup), 9904/2093"
+    }
+  ],
+  "pipeline_ids": [
+    "4ab406d1-4cfd-4784-a077-fe162cd501e2",
+    "7108bce3-fdde-401a-8154-a1358cdcc408",
+    "434b5dc8-823c-4dfa-9a4c-73ca495f83d2",
+    "classify-740601b8-79e8-4d1b-91ee-e55368d76f75",
+    "detect-7dc025b1-19e3-44bc-86ec-294a8a71c05d",
+    "detect-0945313e-ee6e-47eb-ba7b-f317264c4805",
+    "assemble-95f5849d-7e9a-492d-92ec-0d2df6c77752",
+    "summarize-d255f987-8877-4bce-a560-dfa6cec04fc2"
+  ],
+  "batch_ids": [
+    "64415f2a-ae2b-45d9-97b9-0740de47baa7",
+    "54673444-c08b-4ddc-89d3-eed4e3568c41",
+    "c47ec7e5-e468-426c-8b7d-681d3f54c8af",
+    "789b80d3-3141-40df-a490-fbaf658146f7",
+    "67931e4b-c78a-45e7-9749-ec161e312d40",
+    "75377e5e-b90e-4237-b378-7f6ee719fe9d"
+  ],
+  "cleaned_up_records": [
+    {
+      "id": "fa48495a-d58b-4b41-a3e8-8a77bce1481f",
+      "reason": "UAT-007 reject test record — deleted after verification"
+    },
+    {
+      "id": "0509bcfb-ffa6-47ce-bc6f-0a617d520f0b",
+      "reason": "UAT-011 collision test record B — deleted after 409 verification"
+    },
+    {
+      "id": "2d76b08c-39e5-4457-b777-f3dcbac0b8ed",
+      "reason": "UAT-001 scan record that failed OCR — cleaned up post-testing"
+    },
+    {
+      "id": "3f0a2d26-93e5-45b9-8dc2-247a875833ed",
+      "reason": "UAT-007 first reject attempt (invalid PDF) — cleaned up post-testing"
+    },
+    {
+      "id": "c29ed0be-3878-45c8-9a7b-c08bfc9dbc0e",
+      "reason": "UAT-021 reject test record (9903/2092) — deleted after rejection verification"
+    }
+  ],
+  "relationship_ids": [
+    {
+      "id": "1927a554-718c-4cd7-9865-c34b2e88c16a",
+      "source": "4a558b0e-958d-4df6-bc64-1927a1451e79",
+      "target": "98546993-7bf3-4735-832c-8df2ced50660",
+      "type": "repeals",
+      "status": "confirmed",
+      "notes": "UAT-024 detected, UAT-026 confirmed — triggered status propagation (9901 → repealed)"
+    },
+    {
+      "id": "f4153f90-4835-41af-a506-bd26362d3965",
+      "source": "98546993-7bf3-4735-832c-8df2ced50660",
+      "target": "4a558b0e-958d-4df6-bc64-1927a1451e79",
+      "type": "amends",
+      "status": "rejected",
+      "notes": "UAT-024 detected, UAT-027 rejected — no status propagation"
+    },
+    {
+      "id": "15adc49d-36d9-435e-99b3-4f3c00db1b85",
+      "source": "e7051548-3ec4-4333-9064-b27a8df773de",
+      "target": "c1346343-d133-49e8-89b0-9e3def0c4fb9",
+      "type": "conflict",
+      "status": "confirmed",
+      "notes": "UAT-025 conflict between 9905 and 9906 — confirmed to unblock assembly"
+    }
+  ],
+  "codification_ids": [
+    {
+      "id": "6d875b86-94e5-468c-b8c1-f42d8df653cb",
+      "ordinance_id": "98546993-7bf3-4735-832c-8df2ced50660",
+      "title_number": 5,
+      "chapter_number": 2,
+      "article_number": 1,
+      "human_override": true,
+      "notes": "UAT-023 override from T9/C1 to T5/C2/A1"
+    }
+  ],
+  "code_volume_ids": [
+    {
+      "id": "c6a70bc0-7503-4fd0-a3b1-7372eee9e482",
+      "edition": "UAT-PROBE-2090s",
+      "title": "Municipal Code of Ordinances",
+      "generated_by_id": "f6be4105-2aa6-4556-867d-98c7421b1595",
+      "notes": "UAT-029 assembly — 2 titles, 2 chapters, 2 sections; 9901 excluded (repealed)"
+    }
+  ],
+  "classification_ids": [],
+  "decision_ids": [],
+  "export_packages": {
+    "likha_dilg": "docs/uat-screenshots/UAT-015-export-dilg.json",
+    "likha_l1_interchange": "docs/uat-screenshots/UAT-016-package-filtered.json",
+    "linaw_l1_interchange": "docs/uat-screenshots/UAT-035-package-filtered.json"
+  },
+  "package_hashes": {
+    "likha_l1": "sha256:647e9d838b85cbf761f6d2d7aebeb4123bc5141c2c386dda96ab64f685bcd433",
+    "linaw_l1": "sha256:2f6e79bce2c6d9ad204de6f6ec519286ef6a8f7d9b907796847bf075906aaf48"
+  }
+}

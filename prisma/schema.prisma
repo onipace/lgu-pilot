@@ -1,0 +1,468 @@
+// Prisma schema for eSANGGUNI — PostgreSQL 16
+// 19 tables mapped from SQLite. See docs/POSTGRES-MIGRATION-SPEC.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ========== WORKSHOP / ANALYTICS ==========
+
+model WorkshopSession {
+  id        String   @id
+  title     String?
+  startedAt DateTime @default(now()) @map("started_at")
+  endedAt   DateTime?
+
+  participants ParticipantSession[]
+
+  @@map("workshop_sessions")
+}
+
+model ParticipantSession {
+  id                String   @id
+  workshopSessionId String   @map("workshop_session_id")
+  participantName   String?  @map("participant_name")
+  ipAddress         String?  @map("ip_address")
+  module            String
+  startedAt         DateTime @default(now()) @map("started_at")
+  lastActiveAt      DateTime @default(now()) @map("last_active_at")
+
+  workshopSession WorkshopSession  @relation(fields: [workshopSessionId], references: [id])
+  logs            InteractionLog[]
+
+  @@map("participant_sessions")
+}
+
+model InteractionLog {
+  id                    Int       @id @default(autoincrement())
+  participantSessionId  String    @map("participant_session_id")
+  workshopSessionId     String    @map("workshop_session_id")
+  module                String
+  interactionType       String    @map("interaction_type")
+  role                  String?
+  content               String?
+  topicTags             String?   @map("topic_tags")
+  obraTemplate          String?   @map("obra_template")
+  obraComplianceScore   Int?      @map("obra_compliance_score")
+  obraDraftLength       Int?      @map("obra_draft_length")
+  userId                String?   @map("user_id")
+  ragContext            String?   @map("rag_context")
+  citationsJson         String?   @map("citations_json")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  participantSession ParticipantSession @relation(fields: [participantSessionId], references: [id])
+
+  @@index([workshopSessionId])
+  @@index([module])
+  @@index([createdAt])
+  @@index([interactionType])
+  @@map("interaction_logs")
+}
+
+// ========== ADMIN AUTH ==========
+
+model AdminUser {
+  id            String     @id @default(uuid())
+  username      String     @unique
+  passwordHash  String     @map("password_hash")
+  displayName   String?    @map("display_name")
+  role          String     @default("lgu_admin")
+  lguId         String?    @map("lgu_id")
+  provinceId    String?    @map("province_id")
+  isActive      Boolean    @default(true) @map("is_active")
+  lastLoginAt   DateTime?  @map("last_login_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  sessions AdminSession[]
+
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id        String   @id
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("admin_sessions")
+}
+
+// ========== USER AUTH ==========
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String     @map("password_hash")
+  fullName        String     @map("full_name")
+  lguName         String     @map("lgu_name")
+  lguType         String?    @map("lgu_type")
+  lguClass        String?    @map("lgu_class")
+  province        String
+  mobilePhone     String?    @map("mobile_phone")
+  status          String     @default("pending")
+  rejectionReason String?    @map("rejection_reason")
+  approvedBy      String?    @map("approved_by")
+  approvedAt      DateTime?  @map("approved_at")
+  lastLoginAt     DateTime?  @map("last_login_at")
+  loginCount      Int        @default(0) @map("login_count")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  sessions UserSession[]
+
+  @@index([email])
+  @@index([status])
+  @@index([province])
+  @@map("users")
+}
+
+model UserSession {
+  id        String   @id
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// ========== KNOWLEDGE BASE ==========
+
+model KbDocument {
+  id              String    @id @default(uuid())
+  lguId           String    @map("lgu_id")
+  docType         String    @map("doc_type")
+  title           String
+  content         String?
+  filePath        String?   @map("file_path")
+  fileName        String?   @map("file_name")
+  fileSize        Int?      @map("file_size")
+  metadata        Json?
+  sectionNumber   String?   @map("section_number")
+  ordinanceNumber String?   @map("ordinance_number")
+  seriesYear      Int?      @map("series_year")
+  ordinanceType   String?   @map("ordinance_type")
+  ruleNumber      Int?      @map("rule_number")
+  topics          String?
+  status          String    @default("pending")
+  errorMessage    String?   @map("error_message")
+  indexedAt       DateTime? @map("indexed_at")
+  createdBy       String?   @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([lguId])
+  @@index([docType])
+  @@index([status])
+  @@map("kb_documents")
+}
+
+model KbIndexRun {
+  id               Int       @id @default(autoincrement())
+  lguId            String    @map("lgu_id")
+  status           String
+  documentsIndexed Int       @default(0) @map("documents_indexed")
+  errorMessage     String?   @map("error_message")
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  triggeredBy      String?   @map("triggered_by")
+
+  @@index([lguId])
+  @@map("kb_index_runs")
+}
+
+// ========== INFRASTRUCTURE ==========
+
+model EcsInstance {
+  id              String    @id @default(uuid())
+  name            String
+  province        String
+  region          String?
+  publicIp        String?   @map("public_ip")
+  sshPort         Int       @default(22) @map("ssh_port")
+  sshUser         String    @default("root") @map("ssh_user")
+  sshKeyPath      String?   @map("ssh_key_path")
+  sshKeyEncrypted String?   @map("ssh_key_encrypted")
+  apiToken        String?   @map("api_token")
+  status          String    @default("unknown")
+  lastHealthCheck DateTime? @map("last_health_check")
+  metadata        Json?
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  deployments LguDeployment[]
+
+  @@map("ecs_instances")
+}
+
+model LguDeployment {
+  id                 String    @id @default(uuid())
+  lguId              String    @map("lgu_id")
+  lguName            String    @map("lgu_name")
+  lguType            String    @map("lgu_type")
+  lguClass           String?   @map("lgu_class")
+  province           String
+  ecsInstanceId      String    @map("ecs_instance_id")
+  containerName      String    @map("container_name")
+  containerPort      Int       @default(3000) @map("container_port")
+  imageTag           String    @default("latest") @map("image_tag")
+  status             String    @default("stopped")
+  domain             String?
+  openrouterApiKey   String?   @map("openrouter_api_key")
+  lightragServiceUrl String?   @map("lightrag_service_url")
+  envVars            Json?     @map("env_vars")
+  lastDeployedAt     DateTime? @map("last_deployed_at")
+  lastHealthCheck    DateTime? @map("last_health_check")
+  healthStatus       String?   @map("health_status")
+  errorMessage       String?   @map("error_message")
+  createdBy          String?   @map("created_by")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  ecsInstance EcsInstance @relation(fields: [ecsInstanceId], references: [id])
+
+  @@index([ecsInstanceId])
+  @@index([lguId])
+  @@index([status])
+  @@index([province])
+  @@map("lgu_deployments")
+}
+
+// ========== LIKHA (Archive) ==========
+
+model ArchivedOrdinance {
+  id                   String    @id @default(uuid())
+  ordinanceNumber      Int       @map("ordinance_number")
+  seriesYear           Int       @map("series_year")
+  title                String
+  content              String
+  summary              String?
+  subjectTags          Json      @default("[]") @map("subject_tags")
+  status               String    @default("active")
+  sourceType           String    @default("scan") @map("source_type")
+  originalFilename     String?   @map("original_filename")
+  scanFilePath         String?   @map("scan_file_path")
+  fileHash             String?   @map("file_hash")
+  archiveStatus        String    @default("processing") @map("archive_status")
+  uploadedById         String    @map("uploaded_by_id")
+  verifiedById         String?   @map("verified_by_id")
+  dilgSubmitted        Boolean   @default(false) @map("dilg_submitted")
+  dilgSubmittedAt      DateTime? @map("dilg_submitted_at")
+  extractionConfidence Json?     @map("extraction_confidence")
+  sectionCount         Int?      @map("section_count")
+  rejectionReason      String?   @map("rejection_reason")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  classifications Classification[]
+  amendingLinks     AmendmentLink[] @relation("amending")
+  amendedLinks      AmendmentLink[] @relation("amended")
+
+  @@unique([ordinanceNumber, seriesYear])
+  @@index([seriesYear])
+  @@index([status])
+  @@index([archiveStatus])
+  @@map("archived_ordinances")
+}
+
+model Classification {
+  id          String   @id @default(uuid())
+  ordinanceId String   @map("ordinance_id")
+  category    String
+  confidence  Float?
+  assignedBy  String   @map("assigned_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  ordinance ArchivedOrdinance @relation(fields: [ordinanceId], references: [id], onDelete: Cascade)
+
+  @@map("classifications")
+}
+
+model AmendmentLink {
+  id               String   @id @default(uuid())
+  amendingId       String   @map("amending_id")
+  amendedId        String   @map("amended_id")
+  relationshipType String   @map("relationship_type")
+  detectedBy       String   @map("detected_by")
+  confirmed        Boolean  @default(false)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  amending ArchivedOrdinance @relation("amending", fields: [amendingId], references: [id])
+  amended  ArchivedOrdinance @relation("amended", fields: [amendedId], references: [id])
+
+  @@map("amendment_links")
+}
+
+// ========== LINAW (Codification) ==========
+
+model LinawOrdinance {
+  id              String   @id @default(uuid())
+  ordinanceNumber Int      @map("ordinance_number")
+  seriesYear      Int      @map("series_year")
+  title           String
+  content         String
+  summary         String?
+  subjectTags     Json     @default("[]") @map("subject_tags")
+  status          String   @default("active")
+  sourceType      String   @default("manual") @map("source_type")
+  sourceFilename  String?  @map("source_filename")
+  fileHash        String?  @map("file_hash")
+  libraryStatus   String   @default("pending_review") @map("library_status")
+  uploadedById    String   @map("uploaded_by_id")
+  verifiedById    String?  @map("verified_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  codification    CodificationRecord?
+  sourceRelations OrdinanceRelationship[] @relation("source")
+  targetRelations OrdinanceRelationship[] @relation("target")
+
+  @@unique([ordinanceNumber, seriesYear])
+  @@index([seriesYear])
+  @@index([libraryStatus])
+  @@map("linaw_ordinances")
+}
+
+model CodificationRecord {
+  id            String    @id @default(uuid())
+  ordinanceId   String    @unique @map("ordinance_id")
+  titleNumber   Int?      @map("title_number")
+  chapterNumber Int?      @map("chapter_number")
+  articleNumber Int?      @map("article_number")
+  sectionInCode Int?      @map("section_in_code")
+  codStatus     String    @default("unclassified") @map("cod_status")
+  aiSuggestion  String?   @map("ai_suggestion")
+  humanOverride String?   @map("human_override")
+  reviewedById  String?   @map("reviewed_by_id")
+  approvedById  String?   @map("approved_by_id")
+  approvedAt    DateTime? @map("approved_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  ordinance LinawOrdinance @relation(fields: [ordinanceId], references: [id])
+
+  @@map("codification_records")
+}
+
+model OrdinanceRelationship {
+  id               String   @id @default(uuid())
+  sourceId         String   @map("source_id")
+  targetId         String   @map("target_id")
+  relationshipType String   @map("relationship_type")
+  sectionRef       String?  @map("section_ref")
+  confidence       Float
+  confirmed        Boolean  @default(false)
+  confirmedById    String?  @map("confirmed_by_id")
+  rejected         Boolean  @default(false)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  source LinawOrdinance @relation("source", fields: [sourceId], references: [id])
+  target LinawOrdinance @relation("target", fields: [targetId], references: [id])
+
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([relationshipType])
+  @@map("ordinance_relationships")
+}
+
+model CodeVolume {
+  id            String    @id @default(uuid())
+  title         String
+  edition       String
+  status        String    @default("draft")
+  structure     String
+  generatedAt   DateTime? @map("generated_at")
+  publishedAt   DateTime? @map("published_at")
+  generatedById String?   @map("generated_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("code_volumes")
+}
+
+// ========== DEMO BOOKING (CR-001) ==========
+
+model DemoBooking {
+  id              String    @id @default(uuid())
+  fullName        String    @map("full_name")
+  email           String
+  organization    String
+  position        String?
+  phone           String?
+  message         String?
+  preferredDate   DateTime? @map("preferred_date")
+  preferredSlot   String?   @map("preferred_slot")
+  status          String    @default("new")
+  hcaptchaPassed  Boolean   @default(false) @map("hcaptcha_passed")
+  sheetsSynced    Boolean   @default(false) @map("sheets_synced")
+  sheetsError     String?   @map("sheets_error")
+  adminNotes      String?   @map("admin_notes")
+  contactedAt     DateTime? @map("contacted_at")
+  confirmedAt     DateTime? @map("confirmed_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+  @@map("demo_bookings")
+}
+
+model DemoAvailability {
+  id            String   @id @default(uuid())
+  dayOfWeek     Int      @map("day_of_week")
+  startTime     String   @map("start_time")
+  endTime       String   @map("end_time")
+  slotDuration  Int      @default(30) @map("slot_duration")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("demo_availability")
+}
+
+model DemoBlockedDate {
+  id        String   @id @default(uuid())
+  date      DateTime  @db.Date
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([date])
+  @@map("demo_blocked_dates")
+}
+
+// ========== SHARED AUDIT ==========
+
+model AgentDecision {
+  id             String    @id @default(uuid())
+  module         String
+  pipelineId     String    @map("pipeline_id")
+  agentId        Int       @map("agent_id")
+  agentName      String    @map("agent_name")
+  action         String
+  inputSnapshot  Json?     @map("input_snapshot")
+  outputSnapshot Json?     @map("output_snapshot")
+  confidence     Float?
+  userId         String?   @map("user_id")
+  reason         String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([pipelineId])
+  @@index([module, createdAt])
+  @@map("agent_decisions")
+}

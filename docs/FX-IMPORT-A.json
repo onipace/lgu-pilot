@@ -1,0 +1,25 @@
+{
+  "records": [
+    {
+      "ordinanceNumber": 9901,
+      "seriesYear": 2090,
+      "title": "UAT-PROBE Solid Waste Management Ordinance",
+      "content": "An ordinance establishing a comprehensive solid waste management program for the Municipality of Pitogo, amending Ordinance No. 9902, S. 2091, and providing funds thereof. Section 1. All households shall segregate waste into biodegradable, non-biodegradable, and recyclable categories. Section 2. A materials recovery facility shall be established in each barangay.",
+      "subjectTags": ["environment"]
+    },
+    {
+      "ordinanceNumber": 9902,
+      "seriesYear": 2091,
+      "title": "UAT-PROBE Tricycle Registration Ordinance",
+      "content": "An ordinance providing for the registration and regulation of tricycles operating within the Municipality of Pitogo, repealing Ordinance No. 9901, S. 2090, and appropriating funds therefor. Section 1. All tricycles must be registered with the Municipal Transportation Office. Section 2. Annual registration fees shall be set at five hundred pesos.",
+      "subjectTags": ["transport"]
+    },
+    {
+      "ordinanceNumber": 9903,
+      "seriesYear": 2092,
+      "title": "UAT-PROBE Market Fee Ordinance",
+      "content": "An ordinance establishing fees for the use of public market stalls in the Municipality of Pitogo. Section 1. Market vendors shall pay a daily fee based on stall size. Section 2. Collected fees shall be remitted to the Municipal Treasury within five business days.",
+      "subjectTags": ["revenue"]
+    }
+  ]
+}

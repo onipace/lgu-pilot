@@ -1,0 +1,62 @@
+# ═══════════════════════════════════════════════════════════
+# eSANGGUNI — Docker Compose for Hostinger VPS (UAT/Pilot)
+# ═══════════════════════════════════════════════════════════
+# Usage:
+#   docker compose -f docker-compose.vps.yml up -d --build
+#
+# Key differences from ECS docker-compose.yml:
+#   - Joins existing esangguni_esangguni-network to reach LightRAG
+#   - Uses host port 3082 (nginx proxies from esangguni.bayanaihan.net)
+#   - No nginx/certbot services (handled by host nginx + Let's Encrypt)
+#   - Resource limits for shared VPS environment
+# ═══════════════════════════════════════════════════════════
+
+services:
+  esangguni:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ELLA_URL: https://ella.esangguni.bayanaihan.net
+        NEXT_PUBLIC_OBRA_URL: https://obra.esangguni.bayanaihan.net
+        NEXT_PUBLIC_YALA_URL: https://yala.esangguni.bayanaihan.net
+        NEXT_PUBLIC_ESANGGUNI_URL: https://esangguni.bayanaihan.net
+    image: esangguni-pilot:latest
+    container_name: esangguni-pilot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3082:3000"
+    env_file:
+      - .env.vps
+    environment:
+      - LIGHTRAG_SERVICE_URL=http://lightrag-service:8020
+    volumes:
+      - esangguni-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+          pids: 100
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - esangguni-network
+      - esangguni-network
+
+volumes:
+  esangguni-data:
+    driver: local
+
+networks:
+  esangguni-network:
+    driver: bridge
+  esangguni-network:
+    external: true
+    name: esangguni_esangguni-network

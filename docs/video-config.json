@@ -1,0 +1,72 @@
+{
+  "title": "PILLAR — Smart Legislation Platform Demo",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+0%",
+  "pitch": "+0Hz",
+  "resolution": "1920x1080",
+  "fps": 30,
+  "codec": "libx264",
+  "audio_codec": "aac",
+  "slides": [
+    {
+      "slide_number": 1,
+      "image": "docs/screenshots/slide-01-title.png",
+      "duration_seconds": 12,
+      "narration": "PILLAR: the Smart Legislation Platform. Transforming thirty-five years of paper archives into searchable, codified law. Built by Emil V. Capino and the BayanAIhan team."
+    },
+    {
+      "slide_number": 2,
+      "image": "docs/screenshots/slide-02-problem.png",
+      "duration_seconds": 14,
+      "narration": "Three hundred forty-nine ordinances spanning thirty-five years, with zero digitization. Legislation locked in filing cabinets, no way to search or detect contradictions, and growing pressure for DILG compliance. PILLAR solves all three."
+    },
+    {
+      "slide_number": 3,
+      "image": "docs/screenshots/showcase-01-likha-home.png",
+      "duration_seconds": 14,
+      "narration": "Meet LIKHA, the digitization module. Upload batch scans of ordinances, and the system automatically runs OCR, classifies by subject, and extracts metadata. Every document enters a structured pipeline from paper to digital record."
+    },
+    {
+      "slide_number": 4,
+      "image": "docs/screenshots/showcase-04-likha-hitl.png",
+      "duration_seconds": 14,
+      "narration": "But automation alone is not enough for legal documents. LIKHA enforces mandatory human-in-the-loop review. Every classification, every extracted field, every legal decision requires explicit human approval before publication."
+    },
+    {
+      "slide_number": 5,
+      "image": "docs/screenshots/showcase-05-likha-published.png",
+      "duration_seconds": 12,
+      "narration": "Once approved, ordinances enter the published archive. Fully searchable, classified by subject matter, and compliant with DILG packaging requirements. Thirty-five years of legislation, now at your fingertips."
+    },
+    {
+      "slide_number": 6,
+      "image": "docs/screenshots/showcase-06-linaw-home.png",
+      "duration_seconds": 14,
+      "narration": "Now meet LINAW, the codification engine. It imports digitized ordinances, builds cross-references between related provisions, detects overlaps, and assembles them into organized legal volumes automatically."
+    },
+    {
+      "slide_number": 7,
+      "image": "docs/screenshots/showcase-08-linaw-conflict.png",
+      "duration_seconds": 14,
+      "narration": "LINAW's conflict detection scans the entire ordinance corpus for contradictions. When it finds potential conflicts, it flags them for human review. The AI identifies, but humans decide. That is the PILLAR principle."
+    },
+    {
+      "slide_number": 8,
+      "image": "docs/screenshots/showcase-09-linaw-assembly.png",
+      "duration_seconds": 12,
+      "narration": "Finally, LINAW assembles individual ordinances into codified volumes, organized by subject. What once took months of manual compilation now happens automatically, producing publication-ready legal codes."
+    },
+    {
+      "slide_number": 9,
+      "image": "docs/screenshots/slide-09-results.png",
+      "duration_seconds": 14,
+      "narration": "The results speak for themselves. A ninety-seven point six percent UAT pass rate, earning a GO verdict. Fourteen-second OCR processing, one hundred percent cross-reference precision, and sub-millisecond search across the entire archive."
+    },
+    {
+      "slide_number": 10,
+      "image": "docs/screenshots/slide-10-cta.png",
+      "duration_seconds": 12,
+      "narration": "Try it live at pillar.bayanaihan.net. From paper to codified law, one ordinance at a time. PILLAR: building the foundation of transparent, accessible governance."
+    }
+  ]
+}

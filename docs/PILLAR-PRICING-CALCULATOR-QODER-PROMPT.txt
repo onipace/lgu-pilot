@@ -1,0 +1,61 @@
+Read all documents in the docs/ folder of this project before starting any work. The critical references are: PILLAR-Architecture-Reference.docx (platform architecture), PILLAR-Token-Meter-Implementation-Plan.docx (token cost model), TOKEN-METER-VPS-CONNECTIVITY.md (VPS deployment details), How-Token-Metering-Works.docx (token consumption patterns), PILLAR-VPS-Deployment-Guide.md (deployment procedures), ALIBABA-CLOUD-ECS-PRICING-RESEARCH.md (cloud infrastructure pricing — instance specs, USD pricing, regional multipliers, bandwidth, storage, commitment discounts, and the Alibaba Cloud Pricing Calculator UX pattern), and PILLAR-LGU-CLASS-TOKEN-SIZING-RESEARCH.md (Philippine LGU classification under RA 11964, legislative output estimates per LGU class, token consumption per PILLAR workflow, monthly token estimates by LGU class, and recommended token credit tiers).
+
+I want to build a PILLAR Pilot LGU Pricing Calculator — a web application that generates professional deployment quotations and configuration specifications for individual LGUs (Local Government Units) in the Philippines. Think of it as a product configurator similar to the Alibaba Cloud Pricing Calculator or AWS Pricing Calculator, but tailored to PILLAR Pilot's specific deployment model.
+
+PILLAR Pilot is being offered to Philippine municipalities and provinces as an AI-powered legislative platform. Each LGU deployment has variable costs depending on infrastructure choices, feature selection, support level, and AI usage volume. I need a tool that lets me (or a sales engineer) configure these parameters and instantly generate a professional quotation with itemized pricing, total cost of ownership, and a technical configuration spec.
+
+CONFIGURATION PARAMETERS TO SUPPORT:
+
+0. LGU Class / City Type (Primary Sizing Parameter) — This is the FIRST selection in the calculator and drives recommended defaults for all other parameters. Based on RA 11964 (Automatic Income Classification of LGUs Act, 2023):
+   Municipality Classes (by average annual regular income over 3 prior fiscal years): 5th Class (below ₱90M), 4th Class (₱90M to <₱130M), 3rd Class (₱130M to <₱160M), 2nd Class (₱160M to <₱200M), 1st Class (₱200M and above).
+   City Types: Component City (part of province, ~111 exist), Independent Component City/ICC (independent from province, 5 exist), Highly Urbanized City/HUC (population 200K+, 33 exist).
+   City Income Classes (RA 11964): 5th (<₱500M), 4th (₱500-800M), 3rd (₱800M-1B), 2nd (₱1-1.3B), 1st (₱1.3B+).
+   How LGU Class drives defaults (all overridable): Selecting "5th Class Municipality" pre-selects Shared ECS, Barangay token tier (500K/mo), Email support, ELLA + OBRA + KB modules. Selecting "1st Class Municipality" pre-selects Dedicated ECS, Provincial token tier (3M/mo), Email + Remote 8×5, Full suite. Selecting "HUC" pre-selects Dedicated ECS + HA, Metropolitan token tier (25M/mo), Dedicated support, Full suite + Hub + Custom.
+   Legislative volume basis: 5th Class ~10-15 ordinances/year, ~40-60 resolutions/year → ~254K tokens/month. 1st Class ~30-50 ordinances/year, ~100-150 resolutions/year → ~2.32M tokens/month. Component City ~40-80 ordinances/year, ~120-250 resolutions/year → ~4.34M tokens/month. HUC ~80-150+ ordinances/year, ~200-400+ resolutions/year → ~10.65M tokens/month.
+   The calculator should display the estimated legislative volume and token consumption for the selected LGU class, so the buyer understands why a particular token tier is recommended.
+
+1. Infrastructure Tier — Dedicated ECS Instance (one Alibaba Cloud ECS per LGU, full isolation, higher cost; reference current Hostinger VPS specs 8 vCPU / 31 GB / 387 GB as baseline). Shared ECS Instance (up to 5 LGUs sharing one ECS, cost-efficient, containerized with resource limits). Also consider Hostinger VPS as a budget pilot option.
+
+2. Bandwidth / Network Tier — Low (~5 GB/month outbound, occasional queries), Medium (~20 GB/month, daily sessions + periodic uploads), High (~50 GB/month, concurrent users + frequent large PDF/image uploads).
+
+3. Solution Components (à la carte) — Landing Page, E.L.L.A. (legal research chat with hybrid RAG), O.B.R.A. (ordinance drafting, compliance review, fix, PDF/image OCR extraction, DOCX/PDF export), Y.A.L.A. (citizen chatbot), Public Chat Assistant, Provincial Hub (multi-LGU coordination), Knowledge Base Management, Admin Dashboard. Each has a base price and optional add-ons. Dependencies: ELLA requires KB; OBRA requires KB + extraction; Provincial Hub requires 2+ spokes.
+
+4. Support Services — Tier 1: Email Support (24-48hr SLA). Tier 2: Email + Remote (Zoom) with mode options: 4hrs×5, 8hrs×5, 12hrs×5, On-demand, On-site. Tier 3: Dedicated Support (named engineer, priority queue, monthly check-ins).
+
+5. Customization Services — Minor Enhancements (branding, prompts, landing page content), Additional Modules (custom AI modules), Productivity Monitoring Tools (usage analytics, adoption tracking, ROI reporting), Integration Services (DILG reporting, document management).
+
+6. Token Credits (AI Usage Allowance — Sized by LGU Class) — Tiers mapped to LGU class based on legislative output volume with 2-3× buffer: Barangay (500K tokens/mo, ₱250), Municipal (1.5M, ₱650), Provincial (3M, ₱1,200), City (6M, ₱2,500), Metro (12M, ₱5,000), Metropolitan (25M, ₱10,000), Unlimited (at-cost + 30%, custom). Legislative volume basis: full OBRA ordinance workflow ~48,150 tokens/$0.017, OBRA resolution ~20,100/$0.009, ELLA 5-turn session ~38,400/$0.014, YALA 3-turn session ~7,800/$0.003. Overage: soft cap warning at 80%, overage billed at OpenRouter rate + 30%, auto-upgrade suggestion after 2 consecutive overage months, optional hard cap for government budget compliance. OpenRouter rates: qwen/qwen3.7-plus $0.27/$0.85 per 1M input/output, google/gemini-2.5-flash $0.15/$0.60 per 1M. Platform markup ~3×.
+
+WHAT THE APP SHOULD GENERATE:
+1. Professional Quote Document (PDF/DOCX) — Itemized pricing with line items, subtotal, 12% Philippine VAT, discounts (multi-LGU, annual commitment, pilot program), grand total. Show one-time setup costs and recurring monthly/annual costs separately.
+2. Technical Configuration Spec — Deployment specification for engineering: ECS instance type, Docker container list, port allocation, domain/subdomain config, SSL requirements, environment variables, resource limits, network topology.
+3. Comparison View — Side-by-side comparison of configurations (Dedicated vs Shared ECS, Barangay vs Municipal vs Provincial tokens, 5th Class vs 1st Class vs Component City).
+
+DEEP THINK REQUIREMENTS (before writing any code):
+1. SaaS Pricing Calculator Best Practices — How do Alibaba Cloud, AWS, Azure structure their calculators? UX patterns for configuration-driven quoting, dependency handling, volume discounts, commitment terms.
+2. Government Procurement Compatibility — RA 9184 (Government Procurement Reform Act): ABC alignment, line-item breakdown for bidding, warranty periods, SLA commitments. How do government software vendors in the Philippines structure proposals?
+3. Multi-LGU Deployment Economics — Shared (5 LGUs/ECS) vs dedicated instances. Per-LGU cost at different scales. Break-even points.
+4. Token Credit Tier Validation — Are the proposed buffers sufficient for peak session periods? Conversation history growth effect (longer ELLA conversations cost exponentially more). Per-module token budgets? What if actual usage significantly exceeds or falls below class estimates?
+5. Configuration Dependencies — Map all component dependencies and enforce in the calculator UI.
+6. Pricing Model Structure — Per-module monthly subscription? Per-LGU annual license? One-time setup + monthly recurring? Hybrid? What works best for government SaaS in the Philippines and Southeast Asia?
+7. LGU-Class-Based Pricing Psychology — LGU class is both a technical sizing parameter AND a procurement signal. How to present it naturally? How to show legislative volume estimates so buyers understand WHY a token tier is recommended? Sensitivity of income classification — should the calculator use neutral labels like "Growing Municipality" instead of "5th Class"?
+
+DELIVERABLES EXPECTED:
+1. Pricing Model Document — Complete pricing matrix for all components, tiers, and options with rationale
+2. Configuration Dependency Map — Which components require which, what's optional, what's bundled
+3. LGU Class Reference Table — Quick-reference card mapping each LGU class/city type to recommended infrastructure, token tier, support level, modules, and estimated annual cost. Suitable for printing and sharing with LGU decision-makers.
+4. The Calculator App — Interactive web application (React or Next.js) with real-time price calculation
+5. Quote Generator — PDF/DOCX output with professional formatting suitable for government procurement
+6. Technical Spec Generator — Deployment configuration document output
+7. Admin Panel — For updating prices, adding new modules, adjusting token tier thresholds, and updating LGU class income thresholds when DOF issues new classification orders
+
+TECHNICAL PREFERENCES:
+- Build as a standalone Next.js app (new directory within the PILLAR project or sibling project)
+- React with Tailwind CSS for the UI
+- Recharts for cost visualization charts
+- jsPDF or docx library for document generation
+- All pricing data configurable (JSON config or database, not hardcoded)
+- Calculator works offline (no API calls needed for price calculation)
+- Philippine Peso (₱) as primary currency with USD equivalent shown
+
+Start by reading all context documents in docs/, then deep think about the pricing model and best practices before proposing the architecture. Present the pricing model and app architecture first — do not jump to implementation.

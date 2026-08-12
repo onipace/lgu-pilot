@@ -1,0 +1,107 @@
+# ═══════════════════════════════════════════════════════════
+# eSANGGUNI — Docker Compose for ECS Deployment (PostgreSQL)
+# ═══════════════════════════════════════════════════════════
+# Usage:
+#   docker compose up -d --build
+#
+# Required .env variables:
+#   OPENROUTER_API_KEY   — OpenRouter API key for LLM access
+#   POSTGRES_PASSWORD    — PostgreSQL password
+#   DATABASE_URL         — PostgreSQL connection string (auto-constructed)
+# ═══════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL 16 database
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: esangguni-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: esangguni
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: esangguni
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U esangguni"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - esangguni-network
+
+  # ─────────────────────────────────────────────
+  # eSANGGUNI Next.js app
+  # ─────────────────────────────────────────────
+  esangguni:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ELLA_URL: ${NEXT_PUBLIC_ELLA_URL:-/ella}
+        NEXT_PUBLIC_OBRA_URL: ${NEXT_PUBLIC_OBRA_URL:-/obra}
+        NEXT_PUBLIC_YALA_URL: ${NEXT_PUBLIC_YALA_URL:-/yala}
+        NEXT_PUBLIC_ESANGGUNI_URL: ${NEXT_PUBLIC_ESANGGUNI_URL:-/}
+    image: esangguni-pilot:latest
+    container_name: esangguni-pilot
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3070:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://esangguni:${POSTGRES_PASSWORD}@esangguni-postgres:5432/esangguni
+      - LIGHTRAG_SERVICE_URL=${LIGHTRAG_SERVICE_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - esangguni-network
+
+  # ─────────────────────────────────────────────
+  # Nginx reverse proxy (for production HTTPS)
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: esangguni-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - esangguni
+    networks:
+      - esangguni-network
+    profiles:
+      - production
+
+  certbot:
+    image: certbot/certbot
+    container_name: esangguni-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    profiles:
+      - production
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  esangguni-network:
+    driver: bridge

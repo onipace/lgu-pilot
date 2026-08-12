@@ -1,0 +1,26 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "ignorePatterns": ["pricing-calculator/**", ".next/**", "node_modules/**"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-require-imports": "warn"
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/components/agent-card.tsx",
+        "src/components/agent-pipeline.tsx",
+        "src/components/activity-feed.tsx",
+        "src/types/agentic.ts",
+        "src/app/likha/page.tsx",
+        "src/app/linaw/page.tsx"
+      ],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": "error",
+        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-require-imports": "error"
+      }
+    }
+  ]
+}

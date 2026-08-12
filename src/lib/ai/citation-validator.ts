@@ -1,0 +1,255 @@
+import { getSearchIndex } from "@/lib/ai/rag";
+import type { DocType, SearchResult } from "@/types";
+
+// ── Types ────────────────────────────────────────────────────────────
+
+export interface CitationReference {
+  raw: string;
+  sectionNumber: string;
+  subSection: string;
+  docType: DocType;
+  position: number;
+}
+
+export interface CitationValidation {
+  reference: CitationReference;
+  verified: boolean;
+  docId: string | null;
+  title: string | null;
+  confidence: "high" | "medium" | "low";
+}
+
+export interface CitationValidationResult {
+  citations: CitationValidation[];
+  verified: CitationValidation[];
+  unverified: CitationValidation[];
+  summary: {
+    total: number;
+    verifiedCount: number;
+    unverifiedCount: number;
+  };
+}
+
+// ── Roman numeral converter ──────────────────────────────────────────
+
+const ROMAN_MAP: Record<string, number> = {
+  i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9,
+  x: 10, xi: 11, xii: 12, xiii: 13, xiv: 14, xv: 15, xvi: 16,
+  xvii: 17, xviii: 18, xix: 19, xx: 20, xxi: 21, xxii: 22,
+  xxiii: 23, xxiv: 24, xxv: 25, xxvi: 26, xxvii: 27, xxviii: 28,
+  xxix: 29, xxx: 30, xxxi: 31, xxxii: 32, xxxiii: 33, xxxiv: 34,
+  xxxv: 35, xxxvi: 36, xxxvii: 37, xxxviii: 38, xxxix: 39,
+};
+
+function romanToInt(roman: string): number | null {
+  return ROMAN_MAP[roman.toLowerCase()] ?? null;
+}
+
+// ── Citation extraction ───────────────────────────────────────────────
+
+const RA7160_PATTERN = /(?:Section|Sec\.?)\s+(\d{1,3}[A-Za-z]?)\s*(\([^)]+\))*/gi;
+const ORDINANCE_PATTERN = /(?:(?:Municipal\s+)?Ordinance|(?:MO|AO))\s+No\.?\s*(\d+[-\d]*),?\s*S\.?\s*(\d{4})/gi;
+const IRR_PATTERN = /IRR\s+(?:of\s+R\.?A\.?\s*(?:No\.?\s*)?7160[,;]?\s*)?Rule\s+([IVXLCDM]+)/gi;
+
+export function extractCitations(text: string): CitationReference[] {
+  const refs: CitationReference[] = [];
+  const seen = new Set<string>();
+  let match: RegExpExecArray | null;
+
+  // R.A. 7160 sections
+  RA7160_PATTERN.lastIndex = 0;
+  while ((match = RA7160_PATTERN.exec(text)) !== null) {
+    const sectionNum = match[1].trim();
+    const key = `ra7160-${sectionNum}`;
+    if (seen.has(key)) continue;
+    // Skip very low section numbers that are likely general references, not R.A. 7160
+    // (e.g., "Section 1" in a draft ordinance body vs. "Section 1 of R.A. 7160")
+    const fullMatch = match[0];
+    const isRA7160Context =
+      text.substring(Math.max(0, match.index - 50), match.index).toLowerCase().includes("r.a.") ||
+      text.substring(match.index, Math.min(text.length, match.index + fullMatch.length + 50)).toLowerCase().includes("r.a.") ||
+      text.substring(match.index, Math.min(text.length, match.index + fullMatch.length + 50)).toLowerCase().includes("7160") ||
+      sectionNum.length >= 2; // Sections 10+ are almost certainly R.A. 7160 references
+    if (!isRA7160Context && parseInt(sectionNum) < 10) continue;
+
+    seen.add(key);
+    const subSection = match[2] || "";
+    refs.push({
+      raw: fullMatch,
+      sectionNumber: sectionNum,
+      subSection,
+      docType: "ra7160",
+      position: match.index,
+    });
+  }
+
+  // Ordinances
+  ORDINANCE_PATTERN.lastIndex = 0;
+  while ((match = ORDINANCE_PATTERN.exec(text)) !== null) {
+    const ordNum = match[1].trim();
+    const year = match[2].trim();
+    const key = `ord-${ordNum}-${year}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({
+      raw: match[0],
+      sectionNumber: `${ordNum}/${year}`,
+      subSection: "",
+      docType: "ordinance",
+      position: match.index,
+    });
+  }
+
+  // IRR Rules
+  IRR_PATTERN.lastIndex = 0;
+  while ((match = IRR_PATTERN.exec(text)) !== null) {
+    const roman = match[1].trim();
+    const key = `irr-${roman.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({
+      raw: match[0],
+      sectionNumber: roman,
+      subSection: "",
+      docType: "irr",
+      position: match.index,
+    });
+  }
+
+  return refs;
+}
+
+// ── Citation validation ───────────────────────────────────────────────
+
+function validateRA7160(
+  sectionNumber: string,
+  subSection: string
+): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+  const index = getSearchIndex();
+  const doc = index.documents.find(
+    (d) => d.doc_type === "ra7160" && d.section_number === sectionNumber
+  );
+
+  if (!doc) {
+    return { docId: null, title: null, confidence: "low" };
+  }
+
+  // Base section verified
+  const docId = doc.id;
+  const title = doc.title;
+
+  // If there's a sub-section reference (e.g., "(a)(3)(iii)"), we can only
+  // verify the base section exists; sub-sections are within the full text.
+  if (subSection && subSection.length > 0) {
+    return { docId, title, confidence: "medium" };
+  }
+
+  return { docId, title, confidence: "high" };
+}
+
+function validateOrdinance(
+  ordNum: string,
+  year: string
+): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+  const index = getSearchIndex();
+  const baseNum = ordNum.replace(/^0+/, "");
+
+  const match = index.documents.find((d) => {
+    if (d.doc_type !== "ordinance") return false;
+    if (d.series_year !== parseInt(year)) return false;
+    const docOrdNum = (d.ordinance_number || "").replace(/^0+/, "");
+    return docOrdNum === baseNum;
+  });
+
+  if (!match) {
+    return { docId: null, title: null, confidence: "low" };
+  }
+
+  return { docId: match.id, title: match.title, confidence: "high" };
+}
+
+function validateIRR(
+  roman: string
+): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+  const ruleNum = romanToInt(roman);
+  if (ruleNum === null) {
+    return { docId: null, title: null, confidence: "low" };
+  }
+
+  const index = getSearchIndex();
+  const doc = index.documents.find(
+    (d) => d.doc_type === "irr" && d.rule_number === ruleNum
+  );
+
+  if (!doc) {
+    return { docId: null, title: null, confidence: "low" };
+  }
+
+  return { docId: doc.id, title: doc.title, confidence: "high" };
+}
+
+function validateCitation(ref: CitationReference): CitationValidation {
+  let result: { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" };
+
+  switch (ref.docType) {
+    case "ra7160":
+      result = validateRA7160(ref.sectionNumber, ref.subSection);
+      break;
+    case "ordinance": {
+      const parts = ref.sectionNumber.split("/");
+      result = validateOrdinance(parts[0], parts[1] || "");
+      break;
+    }
+    case "irr":
+      result = validateIRR(ref.sectionNumber);
+      break;
+    default:
+      result = { docId: null, title: null, confidence: "low" };
+  }
+
+  return {
+    reference: ref,
+    verified: result.confidence !== "low",
+    docId: result.docId,
+    title: result.title,
+    confidence: result.confidence,
+  };
+}
+
+export function validateAllCitations(text: string): CitationValidationResult {
+  const refs = extractCitations(text);
+  const citations = refs.map(validateCitation);
+  const verified = citations.filter((c) => c.verified);
+  const unverified = citations.filter((c) => !c.verified);
+
+  return {
+    citations,
+    verified,
+    unverified,
+    summary: {
+      total: citations.length,
+      verifiedCount: verified.length,
+      unverifiedCount: unverified.length,
+    },
+  };
+}
+
+// ── Allow-list builder for prompt injection ───────────────────────────
+
+export function buildCitationAllowList(searchResults: SearchResult[]): string {
+  if (searchResults.length === 0) return "";
+
+  const lines = searchResults.map((r) => {
+    const label =
+      r.doc_type === "ra7160"
+        ? `Section ${r.section_number || r.id.replace("ra7160-sec-", "")}`
+        : r.doc_type === "ordinance"
+          ? `MO No. ${r.ordinance_number || "?"}, S. ${r.id.match(/S(\d{4})/)?.[1] || "?"}`
+          : r.doc_type === "irr"
+            ? `IRR Rule ${r.title.match(/Rule\s+([IVXLCDM]+)/i)?.[1] || "?"}`
+            : r.title;
+    return `- ${label} — ${r.title}`;
+  });
+
+  return `ALLOWED CITATIONS (you may ONLY cite these provisions):\n${lines.join("\n")}`;
+}

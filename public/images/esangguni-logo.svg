@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 60" width="280" height="60" role="img" aria-labelledby="esangguni-logo-title">
+  <title id="esangguni-logo-title">eSANGGUNI - AI-Powered Smart Legislation Platform</title>
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5B69F5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#17A97D;stop-opacity:1" />
+    </linearGradient>
+    <style>
+      .text-e { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; font-size: 28px; font-weight: 800; fill: #F5A623; }
+      .text-sangg { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; font-size: 28px; font-weight: 800; fill: #FFFFFF; }
+      .text-sangg-dark { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; font-size: 28px; font-weight: 800; fill: #5B69F5; }
+    </style>
+  </defs>
+
+  <!-- Icon: Gavel + Circuit Node -->
+  <g id="icon" transform="translate(5, 8)">
+    <!-- Circuit board base -->
+    <rect x="0" y="0" width="44" height="44" rx="10" fill="url(#iconGrad)" opacity="0.15"/>
+    <rect x="0" y="0" width="44" height="44" rx="10" fill="none" stroke="url(#iconGrad)" stroke-width="1.5"/>
+
+    <!-- Circuit traces -->
+    <line x1="8" y1="22" x2="18" y2="22" stroke="#5B69F5" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="26" y1="22" x2="36" y2="22" stroke="#17A97D" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="22" y1="8" x2="22" y2="16" stroke="#5B69F5" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="22" y1="28" x2="22" y2="36" stroke="#17A97D" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Circuit nodes -->
+    <circle cx="8" cy="22" r="2.5" fill="#5B69F5"/>
+    <circle cx="36" cy="22" r="2.5" fill="#17A97D"/>
+    <circle cx="22" cy="8" r="2.5" fill="#5B69F5"/>
+    <circle cx="22" cy="36" r="2.5" fill="#17A97D"/>
+
+    <!-- Gavel -->
+    <g transform="translate(22, 22)">
+      <!-- Gavel head -->
+      <rect x="-10" y="-6" width="20" height="12" rx="3" fill="url(#iconGrad)" transform="rotate(-30)"/>
+      <!-- Gavel handle -->
+      <rect x="-2" y="2" width="4" height="14" rx="2" fill="#F5A623" transform="rotate(-30)"/>
+      <!-- Gavel base/sound block -->
+      <ellipse cx="0" cy="14" rx="8" ry="3" fill="#5B69F5" opacity="0.6"/>
+    </g>
+
+    <!-- AI sparkle -->
+    <circle cx="34" cy="10" r="1.5" fill="#F5A623"/>
+    <circle cx="10" cy="34" r="1.5" fill="#F5A623"/>
+  </g>
+
+  <!-- Text: eSANGGUNI -->
+  <g id="wordmark" transform="translate(58, 42)">
+    <text class="text-e">e</text>
+    <text x="18" class="text-sangg">SANGGUNI</text>
+  </g>
+</svg>

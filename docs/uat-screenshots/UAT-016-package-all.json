@@ -1,0 +1,36 @@
+{
+  "manifest": {
+    "schemaVersion": "1.0.0",
+    "module": "likha",
+    "interchangeLevel": "L1",
+    "exportedAt": "2026-08-10T01:07:53.926Z",
+    "exportedById": "f6be4105-2aa6-4556-867d-98c7421b1595",
+    "source": {
+      "table": "archived_ordinances",
+      "recordCount": 1,
+      "yearRange": [
+        2091,
+        2091
+      ]
+    },
+    "exporter": {
+      "platform": "pillar-pilot",
+      "appVersion": "1.0.0"
+    }
+  },
+  "records": [
+    {
+      "ordinanceNumber": 9911,
+      "seriesYear": 2091,
+      "title": "UAT-PROBE TRICYCLE REGISTRATION ORDINANCE [verified]",
+      "content": "Republic of the Philippines\nMunicipality of Pitogo, Province of Quezon\nOffice of the Sangguniang Bayan\n\nOrdinance No. 9911, Series of 2091\n\nUAT-PROBE TRICYCLE REGISTRATION ORDINANCE\n\nSECTION 1. Short Title. This Ordinance shall be known as the UAT-PROBE Tricycle Registration Ordinance.\nSECTION 2. Registration. All tricycle operators shall register their vehicles with the municipal treasurer.\nSECTION 3. Fees. A registration fee shall be collected annually.\nSECTION 4. Penalties. Violators shall be fined accordingly.",
+      "summary": null,
+      "subjectTags": [],
+      "status": "active",
+      "sourceType": "scan",
+      "fileHash": "7023c39eace2c03c68cb77367fca1d57fadfd570c092e66e8e198b44f006d4e8",
+      "sourceRecordId": "a88d09f5-e65b-41b2-b6ff-46afe2baeae1"
+    }
+  ],
+  "packageHash": "sha256:415cf5e5c291207c46fcdf7b2a9f941790d40fcb201178e9ef444dfbec9bd70d"
+}

@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.vps
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Python
+__pycache__/
+*.pyc
+
+# SQLite database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# LIKHA uploaded scans (binary, never committed — stored outside public/)
+data/uploads/
+
+# LIKHA BM25 index namespace (runtime artifact of src/lib/likha/search.ts — rebuilt from published rows)
+src/lib/data/likha-search-index.json
+
+# LINAW BM25 index namespace (runtime artifact of src/lib/linaw/search.ts — rebuilt from ready rows)
+src/lib/data/linaw-search-index.json
+
+# Deploy scripts (legacy from pillar-workshop)
+deploy_*.py
+
+# Private keys / certificates
+*.pem
+*.key
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+/src/generated/prisma
