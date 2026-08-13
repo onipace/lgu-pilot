@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse, NextRequest } from "next/server";
 import { withUserAuth } from "@/lib/user-auth-middleware";
 import { chatCompletion } from "@/lib/ai/llm";
+import { recordTokenUsage } from "@/lib/ai/token-meter";
 import { searchDocuments, buildRAGContext } from "@/lib/ai/rag";
 import { queryLightRAG } from "@/lib/ai/lightrag";
 import { OBRA_DRAFT_PROMPT } from "@/lib/ai/prompts";
@@ -21,7 +22,7 @@ interface DraftRequestBody {
   sessionId: string;
 }
 
-export const POST = withUserAuth(async (request: NextRequest) => {
+export const POST = withUserAuth(async (request: NextRequest, { user }) => {
   try {
     const body: DraftRequestBody = await request.json();
     const { template, details, participantName, sessionId } = body;
@@ -90,13 +91,27 @@ export const POST = withUserAuth(async (request: NextRequest) => {
 
 Follow the required Philippine municipal ordinance structure with TITLE, WHEREAS clauses, numbered SECTIONS, PENAL PROVISIONS, and EFFECTIVITY CLAUSE. Cite relevant R.A. 7160 sections ONLY from the provided context.`;
 
-    const draft = await chatCompletion(systemPrompt, userPrompt, {
+    const { content: draft, usage } = await chatCompletion(systemPrompt, userPrompt, {
       maxTokens: 4096,
       temperature: 0.5,
     });
 
+    // Record token usage (fire-and-forget)
+    if (usage) {
+      recordTokenUsage({
+        model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
+        input_tokens: usage.prompt_tokens,
+        output_tokens: usage.completion_tokens,
+        module: "obra",
+        route: "/api/obra/draft",
+        user_id: user.user.id,
+        user_name: user.user.full_name,
+        session_id: sessionId,
+      });
+    }
+
     // Post-generation citation validation
-    const validationResult = validateAllCitations(draft);
+    const validationResult = validateAllCitations(draft, ragContext);
 
     // Build citation warnings for unverified citations
     const citationWarnings: CitationWarning[] = validationResult.unverified.map((c) => ({

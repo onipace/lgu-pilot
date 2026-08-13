@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react';
+import { Send, Database, Brain, Clock } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, Citation } from '@/types';
 import ChatMessage from '@/components/shared/chat-message';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { getOrCreateSessionId } from '@/components/pillar/participant-id';
+import type { ResponseMode } from '@/lib/ai/response-mode';
 import CitationViewerModal from '@/components/ella/citation-viewer-modal';
 
 const WELCOME_MESSAGE: ChatMessageType = {
@@ -66,37 +66,95 @@ function extractCitations(content: string): Citation[] {
     citations.push({ section, title: 'Pitogo Municipal Ordinance', text: 'Referenced in the analysis.', relevance: 85, doc_type: 'ordinance' });
   }
 
-  return citations;
+  // DILG Legal Opinions (bracketed: [DILG LO No. 022, S. 2018 - Title])
+  const dilgStrict = /\[DILG\s+LO\s+No\.?\s*(\d+),?\s*S\.?\s*(\d{4})\s*-\s*([^\]]+)\]/gi;
+  while ((match = dilgStrict.exec(content)) !== null) {
+    const section = `LO No. ${match[1]}, S. ${match[2]}`;
+    const key = `dilg-${section}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    citations.push({ section, title: match[3].trim(), text: 'Referenced in the analysis above.', relevance: 85, doc_type: 'dilg_opinion' });
+  }
+
+  // DILG Legal Opinions (prose: DILG LO No. 022, S. 2018)
+  const dilgProse = /DILG\s+(?:LO|Legal\s+Opinion)\s+No\.?\s*(\d+),?\s*S\.?\s*(\d{4})/gi;
+  while ((match = dilgProse.exec(content)) !== null) {
+    const section = `LO No. ${match[1]}, S. ${match[2]}`;
+    const key = `dilg-${section}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    citations.push({ section, title: 'DILG Legal Opinion', text: 'Referenced in the analysis above.', relevance: 80, doc_type: 'dilg_opinion' });
+  }
+
+  // SC Jurisprudence (bracketed: [G.R. No. 182969 - Case Name (Year)])
+  const scStrict = /\[G\.?\s*R\.?\s+No\.?\s*(\d{4,6}(?:-\d+)?)\s*-\s*([^\]]+)\]/gi;
+  while ((match = scStrict.exec(content)) !== null) {
+    const section = `G.R. No. ${match[1]}`;
+    const key = `sc-${section}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    citations.push({ section, title: match[2].trim(), text: 'Referenced in the analysis above.', relevance: 85, doc_type: 'jurisprudence' });
+  }
+
+  // SC Jurisprudence (prose: G.R. No. 182969)
+  const scProse = /G\.?\s*R\.?\s+No\.?\s*(\d{4,6}(?:-\d+)?)/gi;
+  while ((match = scProse.exec(content)) !== null) {
+    const section = `G.R. No. ${match[1]}`;
+    const key = `sc-${section}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    citations.push({ section, title: 'Supreme Court Decision', text: 'Referenced in the analysis above.', relevance: 80, doc_type: 'jurisprudence' });
+  }
+
+  return citations.map(c => ({ ...c, source: 'llm' as const }));
 }
 
-function VerificationBadge({ verified, confidence }: { verified?: boolean; confidence?: 'high' | 'medium' | 'low' }) {
-  if (verified === undefined) return null;
-
-  if (verified && confidence === 'high') {
+function SourceBadge({ source, relevanceRating }: { source?: "kb" | "llm"; relevanceRating?: "high" | "medium" | "low" }) {
+  if (source === "kb") {
     return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">
-        <ShieldCheck className="h-3 w-3" /> Verified
+      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-sky-500/20 text-sky-400">
+        <Database className="h-3 w-3" /> KB
       </span>
     );
   }
-  if (verified && confidence === 'medium') {
+  if (source === "llm") {
+    const dots = relevanceRating === "high" ? 3 : relevanceRating === "medium" ? 2 : 1;
+    if (relevanceRating === "high") {
+      return (
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-400">
+          <Brain className="h-3 w-3" /> LLM
+          <span className="ml-0.5 flex gap-px">
+            {[1, 2, 3].map(i => <span key={i} className={`w-1 h-1 rounded-full ${i <= dots ? 'bg-amber-400' : 'bg-amber-400/30'}`} />)}
+          </span>
+        </span>
+      );
+    }
+    if (relevanceRating === "medium") {
+      return (
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-orange-500/20 text-orange-400">
+          <Brain className="h-3 w-3" /> LLM
+          <span className="ml-0.5 flex gap-px">
+            {[1, 2, 3].map(i => <span key={i} className={`w-1 h-1 rounded-full ${i <= dots ? 'bg-orange-400' : 'bg-orange-400/30'}`} />)}
+          </span>
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-400">
-        <ShieldAlert className="h-3 w-3" /> Partial
+      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-red-500/20 text-red-400">
+        <Brain className="h-3 w-3" /> LLM
+        <span className="ml-0.5 flex gap-px">
+          {[1, 2, 3].map(i => <span key={i} className={`w-1 h-1 rounded-full ${i <= dots ? 'bg-red-400' : 'bg-red-400/30'}`} />)}
+        </span>
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold bg-red-500/20 text-red-400">
-      <ShieldX className="h-3 w-3" /> Unverified
-    </span>
-  );
+  return null;
 }
 
 interface EllaChatInterfaceProps {
   externalPrompt?: string;
   participantName?: string | null;
-  responseMode?: 'brief' | 'standard' | 'detailed';
+  responseMode?: ResponseMode;
 }
 
 export default function EllaChatInterface({ externalPrompt, participantName, responseMode }: EllaChatInterfaceProps) {
@@ -106,8 +164,13 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
   const [citations, setCitations] = useState<Citation[]>([]);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [isThinking, setIsThinking] = useState(false);
+  const [thinkingText, setThinkingText] = useState('');
+  const [showTimeoutPrompt, setShowTimeoutPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Elapsed timer while loading
   useEffect(() => {
@@ -142,12 +205,21 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setThinkingText('');
+    setIsThinking(false);
+    setShowTimeoutPrompt(false);
 
     const startTime = Date.now();
 
     const doFetch = async (): Promise<{ content: string; citations: Citation[] | null }> => {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000); // 60s timeout
+      abortControllerRef.current = controller;
+
+      const setupTimeout = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setShowTimeoutPrompt(true), 120_000);
+      };
+      setupTimeout();
 
       try {
         const history = messages.filter(m => m.id !== 'ella-welcome').map(m => ({ role: m.role, content: m.content }));
@@ -160,7 +232,7 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
             history,
             participantName: participantName || undefined,
             sessionId: getOrCreateSessionId(),
-            responseMode: responseMode || 'standard',
+            responseMode,
           }),
           signal: controller.signal,
         });
@@ -195,15 +267,11 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
               try {
                 const parsed = JSON.parse(trimmedLine.slice(6));
                 if (parsed.thinking) {
-                  // Handle thinking/reasoning chunks
-                  if (!thinkingStarted) {
-                    thinkingStarted = true;
-                  }
+                  if (!thinkingStarted) { thinkingStarted = true; setIsThinking(true); }
+                  setThinkingText(prev => (prev + parsed.thinking).slice(-500));
                 }
                 if (parsed.text) {
-                  if (thinkingStarted) {
-                    thinkingStarted = false;
-                  }
+                  if (thinkingStarted) { thinkingStarted = false; setIsThinking(false); }
                   fullContent += parsed.text;
                   if (!messageCreated) {
                     // Create assistant message on first text chunk
@@ -228,7 +296,7 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
 
         return { content: fullContent, citations: serverCitations };
       } finally {
-        clearTimeout(timeout);
+        if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
       }
     };
 
@@ -240,7 +308,7 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
 
     const getErrorMessage = (err: unknown): string => {
       if (err instanceof Error && err.name === 'AbortError') {
-        return 'The request timed out. The AI service may be under heavy load — please try again in a moment.';
+        return 'Request cancelled. You can try asking again or rephrase your question.';
       }
       const status = (err as { status?: number })?.status;
       if (status === 429) return 'The AI service is currently rate-limited. Please wait a few seconds and try again.';
@@ -279,11 +347,31 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
       setMessages(prev => [...prev, errMsg]);
     } finally {
       setIsLoading(false);
+      setIsThinking(false);
+      setThinkingText('');
+      setShowTimeoutPrompt(false);
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, []);
+
+  const handleContinueWaiting = () => {
+    setShowTimeoutPrompt(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowTimeoutPrompt(true), 120_000);
+  };
+
+  const handleCancelWait = () => {
+    setShowTimeoutPrompt(false);
+    abortControllerRef.current?.abort();
   };
 
   const docTypeConfig: Record<string, { label: string; bg: string }> = {
@@ -302,13 +390,45 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
           <div className="space-y-4 p-5">
             {messages.map(msg => <ChatMessage key={msg.id} message={msg} module="ella" />)}
             {isLoading && (
-              <div className="flex justify-start">
+              <div className="flex flex-col gap-2 items-start">
                 <div className="flex items-center gap-3 rounded-2xl rounded-bl-sm bg-[hsl(224_35%_17%)] border border-[hsl(224_27%_22%)] px-4 py-3">
                   <div className="flex items-center gap-1.5">
+                    {isThinking && <Brain className="h-3.5 w-3.5 text-[hsl(239_76%_70%)] animate-pulse" />}
                     <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
                   </div>
-                  <span className="text-[11px] tabular-nums text-[hsl(216_20%_40%)]">{elapsedSec}s</span>
+                  <span className="text-[11px] tabular-nums text-[hsl(216_20%_40%)]">
+                    {isThinking ? 'Thinking' : 'Working'}... {elapsedSec}s
+                  </span>
                 </div>
+                {isThinking && thinkingText && (
+                  <div className="max-w-[82%] rounded-xl border-l-2 border-[hsl(239_76%_50%/0.4)] bg-[hsl(224_35%_14%)] px-3 py-2 max-h-24 overflow-y-auto">
+                    <p className="text-[11px] italic leading-relaxed text-[hsl(216_20%_45%)] line-clamp-4">
+                      {thinkingText.slice(-300)}
+                    </p>
+                  </div>
+                )}
+                {showTimeoutPrompt && (
+                  <div className="flex items-center gap-3 rounded-xl border border-[hsl(38_95%_55%/0.3)] bg-[hsl(38_60%_12%)] px-4 py-3 max-w-[82%]">
+                    <Clock className="h-4 w-4 text-[hsl(38_95%_65%)] shrink-0" />
+                    <span className="text-xs text-[hsl(38_80%_70%)] flex-1">
+                      E.L.L.A. is still analyzing legal citations and case law. Continue waiting?
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={handleContinueWaiting}
+                        className="rounded-lg bg-[hsl(158_64%_35%)] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[hsl(158_64%_30%)] transition-colors"
+                      >
+                        Continue
+                      </button>
+                      <button
+                        onClick={handleCancelWait}
+                        className="rounded-lg border border-[hsl(0_72%_50%/0.4)] bg-[hsl(0_72%_50%/0.1)] px-3 py-1.5 text-[11px] font-semibold text-[hsl(0_72%_70%)] hover:bg-[hsl(0_72%_50%/0.2)] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -351,14 +471,19 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
               <p className="py-8 text-center text-xs text-[hsl(216_20%_45%)]">Citations will appear here as you ask questions.</p>
             ) : citations.map((c, i) => {
               const cfg = docTypeConfig[c.doc_type || 'ra7160'] || docTypeConfig.ra7160;
-              const isUnverified = c.verified === false;
+              const source = c.source || (c.verified === false ? 'llm' : c.verified ? 'kb' : undefined);
+              const isLLM = source === 'llm';
               return (
                 <button
                   key={`${c.section}-${i}`}
                   onClick={() => setSelectedCitation(c)}
                   className={`w-full text-left rounded-lg border p-3 transition-colors cursor-pointer ${
-                    isUnverified
-                      ? 'border-red-500/30 bg-red-500/5 hover:border-red-500/50 hover:bg-red-500/10'
+                    isLLM
+                      ? c.relevance_rating === 'high'
+                        ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50 hover:bg-amber-500/10'
+                        : c.relevance_rating === 'medium'
+                          ? 'border-orange-500/30 bg-orange-500/5 hover:border-orange-500/50 hover:bg-orange-500/10'
+                          : 'border-red-500/30 bg-red-500/5 hover:border-red-500/50 hover:bg-red-500/10'
                       : 'border-[hsl(224_27%_22%)] bg-[hsl(224_35%_17%)] hover:border-[hsl(239_76%_50%)] hover:bg-[hsl(224_35%_20%)]'
                   }`}
                 >
@@ -368,10 +493,7 @@ export default function EllaChatInterface({ externalPrompt, participantName, res
                       <span className="text-xs font-bold text-[hsl(214_100%_97%)]">{c.section}</span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <VerificationBadge verified={c.verified} confidence={c.confidence} />
-                      {c.verified !== false && (
-                        <Badge className="bg-[hsl(158_64%_45%/0.2)] text-[hsl(158_64%_70%)] text-[10px]">{Math.round(c.relevance * 100)}%</Badge>
-                      )}
+                      <SourceBadge source={source} relevanceRating={c.relevance_rating} />
                     </div>
                   </div>
                   <p className="mb-1 text-xs font-medium text-[hsl(239_76%_80%)]">{c.title}</p>

@@ -15,6 +15,8 @@ export interface Citation {
   relevance: number;
   doc_type?: DocType;
   verified?: boolean;
+  source?: "kb" | "llm";
+  relevance_rating?: "high" | "medium" | "low";
   confidence?: "high" | "medium" | "low";
   doc_id?: string;
 }

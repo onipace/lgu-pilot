@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, XCircle, ShieldAlert, ShieldX } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Loader2, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Download, XCircle, ShieldAlert, ShieldX, X, Maximize2, Minimize2, GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -169,6 +169,25 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
   const [showExportModal, setShowExportModal] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
 
+  // Applied fixes tracking
+  const [appliedFixes, setAppliedFixes] = useState<SelectedFixes>({
+    structuralIssues: [],
+    missingSections: [],
+    risks: [],
+    citationWarnings: [],
+  });
+  const [showApplySuccess, setShowApplySuccess] = useState(false);
+  const [applySuccessCount, setApplySuccessCount] = useState(0);
+
+  // Export modal drag/resize/maximize state
+  const [exportModalPos, setExportModalPos] = useState({ x: 0, y: 0 });
+  const [exportModalSize, setExportModalSize] = useState({ w: 720, h: 640 });
+  const [exportIsMaximized, setExportIsMaximized] = useState(false);
+  const [exportIsDragging, setExportIsDragging] = useState(false);
+  const [exportIsResizing, setExportIsResizing] = useState(false);
+  const exportDragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+  const exportResizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+
   // Apply timer state
   const [applyElapsed, setApplyElapsed] = useState(0);
   const [applyTimerActive, setApplyTimerActive] = useState(false);
@@ -194,6 +213,81 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
+  // Export modal drag handler
+  const handleExportDragStart = useCallback((e: React.MouseEvent) => {
+    if (exportIsMaximized) return;
+    e.preventDefault();
+    setExportIsDragging(true);
+    exportDragStart.current = { x: e.clientX, y: e.clientY, posX: exportModalPos.x, posY: exportModalPos.y };
+  }, [exportIsMaximized, exportModalPos]);
+
+  useEffect(() => {
+    if (!exportIsDragging) return;
+    const handleMove = (e: MouseEvent) => {
+      const dx = e.clientX - exportDragStart.current.x;
+      const dy = e.clientY - exportDragStart.current.y;
+      setExportModalPos({ x: exportDragStart.current.posX + dx, y: exportDragStart.current.posY + dy });
+    };
+    const handleUp = () => setExportIsDragging(false);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [exportIsDragging]);
+
+  // Export modal resize handler
+  const handleExportResizeStart = useCallback((e: React.MouseEvent) => {
+    if (exportIsMaximized) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setExportIsResizing(true);
+    exportResizeStart.current = { x: e.clientX, y: e.clientY, w: exportModalSize.w, h: exportModalSize.h };
+  }, [exportIsMaximized, exportModalSize]);
+
+  useEffect(() => {
+    if (!exportIsResizing) return;
+    const handleMove = (e: MouseEvent) => {
+      const dx = e.clientX - exportResizeStart.current.x;
+      const dy = e.clientY - exportResizeStart.current.y;
+      setExportModalSize({
+        w: Math.max(480, exportResizeStart.current.w + dx),
+        h: Math.max(400, exportResizeStart.current.h + dy),
+      });
+    };
+    const handleUp = () => setExportIsResizing(false);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [exportIsResizing]);
+
+  const toggleExportMaximize = () => {
+    if (exportIsMaximized) {
+      setExportIsMaximized(false);
+      setExportModalPos({
+        x: Math.max(0, (window.innerWidth - exportModalSize.w) / 2),
+        y: Math.max(0, (window.innerHeight - exportModalSize.h) / 2),
+      });
+    } else {
+      setExportIsMaximized(true);
+      setExportModalPos({ x: 0, y: 0 });
+    }
+  };
+
+  // Center export modal on open
+  useEffect(() => {
+    if (showExportModal && !exportIsMaximized) {
+      setExportModalPos({
+        x: Math.max(0, (window.innerWidth - exportModalSize.w) / 2),
+        y: Math.max(0, (window.innerHeight - exportModalSize.h) / 2),
+      });
+    }
+  }, [showExportModal]);
+
   // Build a map from section to citation warning for cross-referencing
   const warningBySection = new Map<string, CitationWarning>();
   if (result.citationWarnings) {
@@ -214,6 +308,14 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
     selected.risks.length +
     selected.citationWarnings.length;
 
+  const totalApplied =
+    appliedFixes.structuralIssues.length +
+    appliedFixes.missingSections.length +
+    appliedFixes.risks.length +
+    appliedFixes.citationWarnings.length;
+
+  const totalAvailableToFix = totalFixable - totalApplied;
+
   const toggleItem = (category: keyof SelectedFixes, index: number) => {
     setSelected((prev) => {
       const arr = prev[category];
@@ -228,10 +330,10 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
       setSelectAll(false);
     } else {
       setSelected({
-        structuralIssues: result.structuralIssues.map((_, i) => i),
-        missingSections: result.missingSections.map((_, i) => i),
-        risks: result.risks.map((_, i) => i),
-        citationWarnings: (result.citationWarnings || []).map((_, i) => i),
+        structuralIssues: result.structuralIssues.map((_, i) => i).filter(i => !appliedFixes.structuralIssues.includes(i)),
+        missingSections: result.missingSections.map((_, i) => i).filter(i => !appliedFixes.missingSections.includes(i)),
+        risks: result.risks.map((_, i) => i).filter(i => !appliedFixes.risks.includes(i)),
+        citationWarnings: (result.citationWarnings || []).map((_, i) => i).filter(i => !appliedFixes.citationWarnings.includes(i)),
       });
       setSelectAll(true);
     }
@@ -239,7 +341,18 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
 
   const handleApply = () => {
     if (onApplyFixes && totalSelected > 0) {
+      setApplySuccessCount(totalSelected);
+      setAppliedFixes(prev => ({
+        structuralIssues: [...new Set([...prev.structuralIssues, ...selected.structuralIssues])],
+        missingSections: [...new Set([...prev.missingSections, ...selected.missingSections])],
+        risks: [...new Set([...prev.risks, ...selected.risks])],
+        citationWarnings: [...new Set([...prev.citationWarnings, ...selected.citationWarnings])],
+      }));
       onApplyFixes(selected);
+      setSelected({ structuralIssues: [], missingSections: [], risks: [], citationWarnings: [] });
+      setSelectAll(false);
+      setShowApplySuccess(true);
+      setTimeout(() => setShowApplySuccess(false), 5000);
     }
   };
 
@@ -298,10 +411,16 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
           <div className="space-y-2">
             {result.citationWarnings.map((w, i) => (
               <div key={i} className="flex items-start gap-2">
-                <Checkbox
-                  checked={selected.citationWarnings.includes(i)}
-                  onChange={() => toggleItem('citationWarnings', i)}
-                />
+                {appliedFixes.citationWarnings.includes(i) ? (
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[hsl(158_64%_45%/0.2)]">
+                    <CheckCircle2 className="h-3 w-3 text-[hsl(158_64%_60%)]" />
+                  </span>
+                ) : (
+                  <Checkbox
+                    checked={selected.citationWarnings.includes(i)}
+                    onChange={() => toggleItem('citationWarnings', i)}
+                  />
+                )}
                 <div className="flex-1">
                   <CitationWarningCard warning={w} />
                 </div>
@@ -321,10 +440,16 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
           </h4>
           <div className="space-y-3">{result.risks.map((r, i) => (
             <div key={i} className="flex items-start gap-2">
-              <Checkbox
-                checked={selected.risks.includes(i)}
-                onChange={() => toggleItem('risks', i)}
-              />
+              {appliedFixes.risks.includes(i) ? (
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[hsl(158_64%_45%/0.2)]">
+                  <CheckCircle2 className="h-3 w-3 text-[hsl(158_64%_60%)]" />
+                </span>
+              ) : (
+                <Checkbox
+                  checked={selected.risks.includes(i)}
+                  onChange={() => toggleItem('risks', i)}
+                />
+              )}
               <div className="flex-1">
                 <RiskCard risk={r} citationWarning={warningBySection.get(r.section)} />
               </div>
@@ -341,10 +466,16 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
           <ul className="space-y-2">
             {result.structuralIssues.map((issue, i) => (
               <li key={i} className="flex items-start gap-2 rounded-lg border border-[hsl(224_27%_22%)] bg-[hsl(224_35%_17%)] p-3 text-sm text-[hsl(214_100%_97%)]">
-                <Checkbox
-                  checked={selected.structuralIssues.includes(i)}
-                  onChange={() => toggleItem('structuralIssues', i)}
-                />
+                {appliedFixes.structuralIssues.includes(i) ? (
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded bg-[hsl(158_64%_45%/0.2)]">
+                    <CheckCircle2 className="h-3 w-3 text-[hsl(158_64%_60%)]" />
+                  </span>
+                ) : (
+                  <Checkbox
+                    checked={selected.structuralIssues.includes(i)}
+                    onChange={() => toggleItem('structuralIssues', i)}
+                  />
+                )}
                 <span className="mt-0.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />{issue}
               </li>
             ))}
@@ -357,20 +488,44 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
           <h4 className="mb-3 text-sm font-semibold text-[hsl(216_20%_65%)]">Missing Sections</h4>
           <div className="flex flex-wrap gap-2">
             {result.missingSections.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => toggleItem('missingSections', i)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-                  selected.missingSections.includes(i)
-                    ? 'border-[hsl(158_64%_45%)] bg-[hsl(158_64%_45%/0.15)] text-[hsl(158_64%_70%)]'
-                    : 'border-[hsl(224_27%_25%)] bg-[hsl(224_35%_17%)] text-[hsl(214_100%_97%)] hover:border-[hsl(158_64%_45%/0.5)]'
-                )}
-              >
-                {selected.missingSections.includes(i) && <CheckCircle2 className="h-3 w-3" />}
-                {s}
-              </button>
+              appliedFixes.missingSections.includes(i) ? (
+                <span
+                  key={i}
+                  className="flex items-center gap-1.5 rounded-full border border-[hsl(158_64%_45%/0.3)] bg-[hsl(158_64%_45%/0.1)] px-3 py-1.5 text-xs font-medium text-[hsl(158_64%_60%)]"
+                >
+                  <CheckCircle2 className="h-3 w-3" />{s}
+                </span>
+              ) : (
+                <button
+                  key={i}
+                  onClick={() => toggleItem('missingSections', i)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                    selected.missingSections.includes(i)
+                      ? 'border-[hsl(158_64%_45%)] bg-[hsl(158_64%_45%/0.15)] text-[hsl(158_64%_70%)]'
+                      : 'border-[hsl(224_27%_25%)] bg-[hsl(224_35%_17%)] text-[hsl(214_100%_97%)] hover:border-[hsl(158_64%_45%/0.5)]'
+                  )}
+                >
+                  {selected.missingSections.includes(i) && <CheckCircle2 className="h-3 w-3" />}
+                  {s}
+                </button>
+              )
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Success message */}
+      {showApplySuccess && (
+        <div className="flex items-start gap-2 rounded-lg border border-[hsl(158_64%_45%/0.3)] bg-[hsl(158_64%_45%/0.08)] p-3">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(158_64%_60%)]" />
+          <div>
+            <p className="text-sm font-medium text-[hsl(158_64%_80%)]">
+              {applySuccessCount} {applySuccessCount === 1 ? 'fix' : 'fixes'} applied successfully.
+            </p>
+            <p className="mt-0.5 text-xs text-[hsl(158_64%_60%)]">
+              Select more issues to apply additional fixes, or export the revised draft below.
+            </p>
           </div>
         </div>
       )}
@@ -382,11 +537,13 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
           <div className="flex items-center gap-3">
             <Button
               onClick={handleApply}
-              disabled={totalSelected === 0 || isApplying}
+              disabled={totalSelected === 0 || isApplying || totalAvailableToFix === 0}
               className="gap-2 bg-[hsl(158_64%_45%)] text-white hover:bg-[hsl(158_64%_37%)] disabled:opacity-50"
             >
               {isApplying ? (
                 <><Loader2 className="h-4 w-4 animate-spin" />Applying Fixes...</>
+              ) : totalAvailableToFix === 0 ? (
+                <><CheckCircle2 className="h-4 w-4" />All Fixes Applied</>
               ) : (
                 <><CheckCircle2 className="h-4 w-4" />Apply Selected Fixes ({totalSelected})</>
               )}
@@ -400,6 +557,11 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
             {!applyTimerActive && applyElapsed > 0 && (
               <span className="text-xs text-[hsl(216_20%_45%)]">
                 Completed in {formatApplyTime(applyElapsed)}
+              </span>
+            )}
+            {totalApplied > 0 && !isApplying && (
+              <span className="text-xs font-medium text-[hsl(158_64%_60%)]">
+                {totalApplied}/{totalFixable} fixes applied
               </span>
             )}
           </div>
@@ -421,19 +583,34 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
         </Button>
       </div>
 
-      {/* ── Export Modal ──────────────────────────────────────────────────── */}
+      {/* ── Export Modal (draggable, resizable, maximizable) ──────────── */}
       {showExportModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-50 bg-black/70"
           onClick={() => setShowExportModal(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-2xl border border-[hsl(224_27%_25%)] bg-[hsl(222_47%_9%)] p-6 shadow-2xl"
+            className={cn(
+              "absolute flex flex-col rounded-2xl border border-[hsl(224_27%_25%)] bg-[hsl(222_47%_9%)] shadow-2xl",
+              exportIsMaximized ? "inset-2 rounded-none" : ""
+            )}
+            style={exportIsMaximized ? undefined : {
+              left: exportModalPos.x,
+              top: exportModalPos.y,
+              width: exportModalSize.w,
+              height: exportModalSize.h,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-[hsl(214_100%_97%)]">Export</h3>
+            {/* Modal header — drag handle */}
+            <div
+              className="flex items-center justify-between border-b border-[hsl(224_27%_22%)] px-4 py-2.5 cursor-move select-none shrink-0"
+              onMouseDown={handleExportDragStart}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <GripHorizontal className="h-3.5 w-3.5 text-[hsl(216_20%_35%)] shrink-0" />
+                <Download className="h-3.5 w-3.5 text-[hsl(158_64%_60%)] shrink-0" />
+                <h3 className="text-sm font-semibold text-[hsl(214_100%_97%)] truncate">Export Draft</h3>
                 <span className={cn(
                   'rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
                   hasFixesApplied
@@ -443,82 +620,107 @@ export function ReviewResultsPanel({ result, draftText, hasFixesApplied, onApply
                   {hasFixesApplied ? 'Fixed Draft' : 'Original Draft'}
                 </span>
               </div>
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="rounded-lg p-1.5 text-[hsl(216_20%_55%)] hover:bg-[hsl(224_27%_22%)] hover:text-white transition-colors"
-              >
-                <XCircle className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={toggleExportMaximize}
+                  className="rounded-lg p-1.5 text-[hsl(216_20%_55%)] hover:bg-[hsl(224_27%_22%)] hover:text-white transition-colors"
+                  title={exportIsMaximized ? "Restore" : "Maximize"}
+                >
+                  {exportIsMaximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                </button>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="rounded-lg p-1.5 text-[hsl(216_20%_55%)] hover:bg-[hsl(224_27%_22%)] hover:text-red-400 transition-colors"
+                  title="Close"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Fixes applied banner */}
-            {hasFixesApplied && (
-              <div className="mb-4 rounded-lg border border-[hsl(158_64%_45%/0.3)] bg-[hsl(158_64%_45%/0.08)] p-3">
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(158_64%_60%)]" />
-                  <div>
-                    <p className="text-sm font-medium text-[hsl(158_64%_80%)]">
-                      Selected fixes have been applied to this draft.
-                    </p>
-                    <p className="mt-1 text-xs text-[hsl(158_64%_60%)]">
-                      The compliance score above reflects the pre-fix analysis. You may want to re-analyze after exporting to get an updated score.
-                    </p>
-                    {onReanalyze && (
-                      <button
-                        onClick={() => { setShowExportModal(false); onReanalyze(); }}
-                        className="mt-2 rounded-lg bg-[hsl(158_64%_45%/0.2)] px-3 py-1.5 text-xs font-medium text-[hsl(158_64%_70%)] hover:bg-[hsl(158_64%_45%/0.3)] transition-colors"
-                      >
-                        Re-analyze for updated score
-                      </button>
-                    )}
+            {/* Modal body */}
+            <div className="flex-1 overflow-auto p-5 min-h-0">
+              {/* Fixes applied banner */}
+              {hasFixesApplied && (
+                <div className="mb-4 rounded-lg border border-[hsl(158_64%_45%/0.3)] bg-[hsl(158_64%_45%/0.08)] p-3">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(158_64%_60%)]" />
+                    <div>
+                      <p className="text-sm font-medium text-[hsl(158_64%_80%)]">
+                        Selected fixes have been applied to this draft.
+                      </p>
+                      <p className="mt-1 text-xs text-[hsl(158_64%_60%)]">
+                        The compliance score above reflects the pre-fix analysis. You may want to re-analyze after exporting to get an updated score.
+                      </p>
+                      {onReanalyze && (
+                        <button
+                          onClick={() => { setShowExportModal(false); onReanalyze(); }}
+                          className="mt-2 rounded-lg bg-[hsl(158_64%_45%/0.2)] px-3 py-1.5 text-xs font-medium text-[hsl(158_64%_70%)] hover:bg-[hsl(158_64%_45%/0.3)] transition-colors"
+                        >
+                          Re-analyze for updated score
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              )}
+
+              {/* Preview section */}
+              <div className="mb-5">
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[hsl(216_20%_50%)]">
+                  Preview — {hasFixesApplied ? 'Fixed Draft' : 'Original Draft'}
+                </h4>
+                <div className="max-h-64 overflow-auto rounded-lg border border-[hsl(224_27%_22%)] bg-[hsl(224_35%_13%)] p-4 font-mono text-xs text-[hsl(214_100%_90%)] leading-relaxed whitespace-pre-wrap">
+                  {draftText?.substring(0, 2000) || 'No draft text available.'}
+                  {(draftText?.length || 0) > 2000 && '\n\n... (truncated for preview)'}
+                </div>
+              </div>
+
+              {/* Format selection */}
+              <div>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[hsl(216_20%_50%)]">Export Format</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      if (onExport && draftText) onExport('docx', draftText);
+                      setShowExportModal(false);
+                    }}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-[hsl(224_27%_25%)] bg-[hsl(224_35%_13%)] p-4 transition-all hover:border-[hsl(158_64%_45%/0.5)] hover:bg-[hsl(224_35%_17%)]"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+                      <Download className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-[hsl(214_100%_97%)]">DOCX</span>
+                    <span className="text-[10px] text-[hsl(216_20%_50%)]">Microsoft Word</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (onExport && draftText) onExport('pdf', draftText);
+                      setShowExportModal(false);
+                    }}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-[hsl(224_27%_25%)] bg-[hsl(224_35%_13%)] p-4 transition-all hover:border-[hsl(158_64%_45%/0.5)] hover:bg-[hsl(224_35%_17%)]"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                      <Download className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-[hsl(214_100%_97%)]">PDF</span>
+                    <span className="text-[10px] text-[hsl(216_20%_50%)]">Portable Document</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Resize handle (bottom-right corner) */}
+            {!exportIsMaximized && (
+              <div
+                className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize"
+                onMouseDown={handleExportResizeStart}
+              >
+                <svg className="h-4 w-4 text-[hsl(216_20%_35%)]" viewBox="0 0 16 16" fill="none">
+                  <path d="M14 14L8 14M14 14L14 8M14 14L6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
               </div>
             )}
-
-            {/* Preview section */}
-            <div className="mb-5">
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[hsl(216_20%_50%)]">
-                Preview — {hasFixesApplied ? 'Fixed Draft' : 'Original Draft'}
-              </h4>
-              <div className="max-h-48 overflow-auto rounded-lg border border-[hsl(224_27%_22%)] bg-[hsl(224_35%_13%)] p-4 font-mono text-xs text-[hsl(214_100%_90%)] leading-relaxed whitespace-pre-wrap">
-                {draftText?.substring(0, 1000) || 'No draft text available.'}
-                {(draftText?.length || 0) > 1000 && '\n\n... (truncated for preview)'}
-              </div>
-            </div>
-
-            {/* Format selection */}
-            <div className="mb-5">
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[hsl(216_20%_50%)]">Export Format</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => {
-                    if (onExport && draftText) onExport('docx', draftText);
-                    setShowExportModal(false);
-                  }}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-[hsl(224_27%_25%)] bg-[hsl(224_35%_13%)] p-4 transition-all hover:border-[hsl(158_64%_45%/0.5)] hover:bg-[hsl(224_35%_17%)]"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
-                    <Download className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-semibold text-[hsl(214_100%_97%)]">DOCX</span>
-                  <span className="text-[10px] text-[hsl(216_20%_50%)]">Microsoft Word</span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (onExport && draftText) onExport('pdf', draftText);
-                    setShowExportModal(false);
-                  }}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-[hsl(224_27%_25%)] bg-[hsl(224_35%_13%)] p-4 transition-all hover:border-[hsl(158_64%_45%/0.5)] hover:bg-[hsl(224_35%_17%)]"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
-                    <Download className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-semibold text-[hsl(214_100%_97%)]">PDF</span>
-                  <span className="text-[10px] text-[hsl(216_20%_50%)]">Portable Document</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

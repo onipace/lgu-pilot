@@ -12,6 +12,8 @@ import { ELLA_SYSTEM_PROMPT, YALA_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { streamChatResponse } from "@/lib/ai/llm";
 import { validateAllCitations } from "@/lib/ai/citation-validator";
 import { getResponseModeSuffix, RESPONSE_MODE_CONFIG, type ResponseMode } from "@/lib/ai/response-mode";
+import { recordTokenUsage } from "@/lib/ai/token-meter";
+import { captureLLMCitations } from "@/lib/ai/citation-capture";
 import type { Citation } from "@/types";
 
 interface ChatRequestBody {
@@ -23,10 +25,12 @@ interface ChatRequestBody {
   responseMode?: ResponseMode;
 }
 
-export const POST = withUserAuth(async (request: NextRequest) => {
+export const POST = withUserAuth(async (request: NextRequest, { user }) => {
   try {
     const body: ChatRequestBody = await request.json();
     const { module, message, history, participantName, sessionId } = body;
+    const userId = user.user.id;
+    const userFullName = user.user.full_name;
 
     const ipAddress =
       request.headers.get("x-real-ip") ||
@@ -112,7 +116,19 @@ export const POST = withUserAuth(async (request: NextRequest) => {
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
+          // Capture usage from the final stream chunk (when stream_options.include_usage is true)
+          let usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
+
           for await (const chunk of stream) {
+            // Capture usage from the final chunk (empty choices + usage object)
+            if (chunk.usage) {
+              usage = {
+                prompt_tokens: chunk.usage.prompt_tokens,
+                completion_tokens: chunk.usage.completion_tokens,
+                total_tokens: chunk.usage.total_tokens,
+              };
+            }
+
             const delta = chunk.choices[0]?.delta as { content?: string | null; reasoning?: string } | undefined;
             const content = delta?.content;
             const reasoning = delta?.reasoning;
@@ -132,25 +148,41 @@ export const POST = withUserAuth(async (request: NextRequest) => {
           // Post-stream citation validation for ELLA responses
           const citations: Citation[] = [];
           if (module === "ella" && fullResponse) {
-            const validationResult = validateAllCitations(fullResponse);
+            const validationResult = validateAllCitations(fullResponse, ragContext);
 
             // Build citations array ONLY from what the LLM actually cited
             for (const cited of validationResult.citations) {
-              // Try to find matching search result for metadata
+              // Try to find matching search result for metadata (by doc ID or type-specific fields)
               const matchedResult = searchResults?.find(
                 (r) =>
-                  r.doc_type === cited.reference.docType &&
-                  (r.section_number === cited.reference.sectionNumber ||
-                    r.ordinance_number === cited.reference.sectionNumber)
+                  (cited.docId && r.id === cited.docId) ||
+                  (r.doc_type === cited.reference.docType &&
+                    (r.section_number === cited.reference.sectionNumber ||
+                      r.ordinance_number === cited.reference.sectionNumber))
               );
 
+              // Format display section based on doc type
+              let displaySection: string;
+              switch (cited.reference.docType) {
+                case "dilg_opinion":
+                  displaySection = `LO No. ${cited.reference.sectionNumber}, S. ${cited.reference.subSection}`;
+                  break;
+                case "jurisprudence":
+                  displaySection = `G.R. No. ${cited.reference.sectionNumber}`;
+                  break;
+                default:
+                  displaySection = cited.reference.sectionNumber;
+              }
+
               citations.push({
-                section: cited.reference.sectionNumber,
+                section: displaySection,
                 title: cited.title || matchedResult?.title || cited.reference.raw,
-                text: matchedResult?.snippet || cited.reference.raw,
+                text: matchedResult?.snippet || cited.snippet || cited.reference.raw,
                 relevance: matchedResult?.relevance || 0,
                 doc_type: cited.reference.docType,
                 verified: cited.verified,
+                source: cited.source,
+                relevance_rating: cited.relevanceRating,
                 confidence: cited.confidence,
                 doc_id: cited.docId || matchedResult?.id || undefined,
               });
@@ -160,12 +192,26 @@ export const POST = withUserAuth(async (request: NextRequest) => {
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ citations })}\n\n`)
               );
+
+              // Capture LLM-sourced citations to DB (fire-and-forget)
+              try {
+                captureLLMCitations(citations, {
+                  sourceQuery: message,
+                  responseText: fullResponse,
+                  module,
+                  sessionId,
+                  userId,
+                  userName: userFullName,
+                });
+              } catch {
+                // Non-blocking
+              }
             }
           }
 
           // Log assistant response after stream completes
           try {
-            await logChatMessage({
+            logChatMessage({
               participantSessionId: sessionId,
               workshopSessionId,
               module,
@@ -178,6 +224,20 @@ export const POST = withUserAuth(async (request: NextRequest) => {
             });
           } catch {
             // Non-blocking
+          }
+
+          // Record token usage (fire-and-forget) after stream completes
+          if (usage) {
+            recordTokenUsage({
+              model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
+              input_tokens: usage.prompt_tokens,
+              output_tokens: usage.completion_tokens,
+              module,
+              route: "/api/chat",
+              user_id: userId,
+              user_name: userFullName,
+              session_id: sessionId,
+            });
           }
 
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));

@@ -14,17 +14,24 @@ export interface CitationReference {
 export interface CitationValidation {
   reference: CitationReference;
   verified: boolean;
+  source: "kb" | "llm";
+  relevanceRating: "high" | "medium" | "low";
   docId: string | null;
   title: string | null;
+  snippet: string | null;
   confidence: "high" | "medium" | "low";
 }
 
 export interface CitationValidationResult {
   citations: CitationValidation[];
+  kb: CitationValidation[];
+  llm: CitationValidation[];
   verified: CitationValidation[];
   unverified: CitationValidation[];
   summary: {
     total: number;
+    kbCount: number;
+    llmCount: number;
     verifiedCount: number;
     unverifiedCount: number;
   };
@@ -50,6 +57,8 @@ function romanToInt(roman: string): number | null {
 const RA7160_PATTERN = /(?:Section|Sec\.?)\s+(\d{1,3}[A-Za-z]?)\s*(\([^)]+\))*/gi;
 const ORDINANCE_PATTERN = /(?:(?:Municipal\s+)?Ordinance|(?:MO|AO))\s+No\.?\s*(\d+[-\d]*),?\s*S\.?\s*(\d{4})/gi;
 const IRR_PATTERN = /IRR\s+(?:of\s+R\.?A\.?\s*(?:No\.?\s*)?7160[,;]?\s*)?Rule\s+([IVXLCDM]+)/gi;
+const DILG_OPINION_PATTERN = /DILG\s+(?:LO|Legal\s+Opinion)\s+No\.?\s*(\d+),?\s*S\.?\s*(\d{4})/gi;
+const JURISPRUDENCE_PATTERN = /G\.?\s*R\.?\s+No\.?\s*(\d{4,6}(?:-\d+)?)/gi;
 
 export function extractCitations(text: string): CitationReference[] {
   const refs: CitationReference[] = [];
@@ -116,6 +125,39 @@ export function extractCitations(text: string): CitationReference[] {
     });
   }
 
+  // DILG Legal Opinions
+  DILG_OPINION_PATTERN.lastIndex = 0;
+  while ((match = DILG_OPINION_PATTERN.exec(text)) !== null) {
+    const opinionNum = match[1].trim();
+    const year = match[2].trim();
+    const key = `dilg-${opinionNum}-${year}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({
+      raw: match[0],
+      sectionNumber: opinionNum,
+      subSection: year,
+      docType: "dilg_opinion",
+      position: match.index,
+    });
+  }
+
+  // SC Jurisprudence
+  JURISPRUDENCE_PATTERN.lastIndex = 0;
+  while ((match = JURISPRUDENCE_PATTERN.exec(text)) !== null) {
+    const grNumber = match[1].trim();
+    const key = `sc-${grNumber}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({
+      raw: match[0],
+      sectionNumber: grNumber,
+      subSection: "",
+      docType: "jurisprudence",
+      position: match.index,
+    });
+  }
+
   return refs;
 }
 
@@ -124,33 +166,34 @@ export function extractCitations(text: string): CitationReference[] {
 function validateRA7160(
   sectionNumber: string,
   subSection: string
-): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+): { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" } {
   const index = getSearchIndex();
   const doc = index.documents.find(
     (d) => d.doc_type === "ra7160" && d.section_number === sectionNumber
   );
 
   if (!doc) {
-    return { docId: null, title: null, confidence: "low" };
+    return { docId: null, title: null, snippet: null, confidence: "low" };
   }
 
   // Base section verified
   const docId = doc.id;
   const title = doc.title;
+  const snippet = doc.snippet;
 
   // If there's a sub-section reference (e.g., "(a)(3)(iii)"), we can only
   // verify the base section exists; sub-sections are within the full text.
   if (subSection && subSection.length > 0) {
-    return { docId, title, confidence: "medium" };
+    return { docId, title, snippet, confidence: "medium" };
   }
 
-  return { docId, title, confidence: "high" };
+  return { docId, title, snippet, confidence: "high" };
 }
 
 function validateOrdinance(
   ordNum: string,
   year: string
-): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+): { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" } {
   const index = getSearchIndex();
   const baseNum = ordNum.replace(/^0+/, "");
 
@@ -162,18 +205,18 @@ function validateOrdinance(
   });
 
   if (!match) {
-    return { docId: null, title: null, confidence: "low" };
+    return { docId: null, title: null, snippet: null, confidence: "low" };
   }
 
-  return { docId: match.id, title: match.title, confidence: "high" };
+  return { docId: match.id, title: match.title, snippet: match.snippet, confidence: "high" };
 }
 
 function validateIRR(
   roman: string
-): { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" } {
+): { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" } {
   const ruleNum = romanToInt(roman);
   if (ruleNum === null) {
-    return { docId: null, title: null, confidence: "low" };
+    return { docId: null, title: null, snippet: null, confidence: "low" };
   }
 
   const index = getSearchIndex();
@@ -182,14 +225,97 @@ function validateIRR(
   );
 
   if (!doc) {
-    return { docId: null, title: null, confidence: "low" };
+    return { docId: null, title: null, snippet: null, confidence: "low" };
   }
 
-  return { docId: doc.id, title: doc.title, confidence: "high" };
+  return { docId: doc.id, title: doc.title, snippet: doc.snippet, confidence: "high" };
 }
 
-function validateCitation(ref: CitationReference): CitationValidation {
-  let result: { docId: string | null; title: string | null; confidence: "high" | "medium" | "low" };
+function validateDILGOpinion(
+  opinionNum: string,
+  year: string
+): { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" } {
+  const index = getSearchIndex();
+  const yearNum = parseInt(year);
+  const baseNum = opinionNum.replace(/^0+/, "");
+
+  const match = index.documents.find((d) => {
+    if (d.doc_type !== "dilg_opinion") return false;
+    if (d.series_year !== yearNum) return false;
+    // Title format: "DILG Legal Opinion No. 022, S. 2018 - ..."
+    const titleMatch = d.title.match(/No\.?\s*(\d+)/);
+    if (!titleMatch) return false;
+    return titleMatch[1].replace(/^0+/, "") === baseNum;
+  });
+
+  if (!match) {
+    return { docId: null, title: null, snippet: null, confidence: "low" };
+  }
+
+  return { docId: match.id, title: match.title, snippet: match.snippet, confidence: "high" };
+}
+
+function validateJurisprudence(
+  grNumber: string
+): { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" } {
+  const index = getSearchIndex();
+  const grRegex = new RegExp(`G\\.?R\\.?\\s*No\\.?\\s*${grNumber}\\b`, "i");
+
+  const match = index.documents.find((d) => {
+    if (d.doc_type !== "jurisprudence") return false;
+    // Title format: "G.R. No. 182969 - Case Name (Year)"
+    return grRegex.test(d.title);
+  });
+
+  if (!match) {
+    return { docId: null, title: null, snippet: null, confidence: "low" };
+  }
+
+  return { docId: match.id, title: match.title, snippet: match.snippet, confidence: "high" };
+}
+
+// ── LLM citation relevance rating ─────────────────────────────────────
+
+function rateLLMCitation(ref: CitationReference, ragContext?: string): "high" | "medium" | "low" {
+  // Extract the key identifier from the citation
+  let searchKey = "";
+  switch (ref.docType) {
+    case "jurisprudence":
+      searchKey = ref.sectionNumber;
+      break;
+    case "dilg_opinion":
+      searchKey = ref.sectionNumber;
+      break;
+    case "ordinance": {
+      const parts = ref.sectionNumber.split("/");
+      searchKey = parts[0] || "";
+      break;
+    }
+    case "ra7160":
+      searchKey = ref.sectionNumber;
+      break;
+    case "irr":
+      searchKey = ref.sectionNumber;
+      break;
+    default:
+      return "low";
+  }
+
+  if (!searchKey || !ragContext) return "medium";
+
+  // Check if the citation's key identifier appears in the RAG context
+  const contextLower = ragContext.toLowerCase();
+  const keyLower = searchKey.toLowerCase();
+
+  if (contextLower.includes(keyLower)) {
+    return "high";
+  }
+
+  return "medium";
+}
+
+function validateCitation(ref: CitationReference, ragContext?: string): CitationValidation {
+  let result: { docId: string | null; title: string | null; snippet: string | null; confidence: "high" | "medium" | "low" };
 
   switch (ref.docType) {
     case "ra7160":
@@ -203,31 +329,50 @@ function validateCitation(ref: CitationReference): CitationValidation {
     case "irr":
       result = validateIRR(ref.sectionNumber);
       break;
+    case "dilg_opinion":
+      result = validateDILGOpinion(ref.sectionNumber, ref.subSection);
+      break;
+    case "jurisprudence":
+      result = validateJurisprudence(ref.sectionNumber);
+      break;
     default:
-      result = { docId: null, title: null, confidence: "low" };
+      result = { docId: null, title: null, snippet: null, confidence: "low" };
   }
+
+  const isInKB = result.docId !== null;
+  const source: "kb" | "llm" = isInKB ? "kb" : "llm";
+  const relevanceRating = isInKB ? "high" : rateLLMCitation(ref, ragContext);
 
   return {
     reference: ref,
-    verified: result.confidence !== "low",
+    verified: isInKB,
+    source,
+    relevanceRating,
     docId: result.docId,
     title: result.title,
+    snippet: result.snippet,
     confidence: result.confidence,
   };
 }
 
-export function validateAllCitations(text: string): CitationValidationResult {
+export function validateAllCitations(text: string, ragContext?: string): CitationValidationResult {
   const refs = extractCitations(text);
-  const citations = refs.map(validateCitation);
+  const citations = refs.map(ref => validateCitation(ref, ragContext));
+  const kb = citations.filter((c) => c.source === "kb");
+  const llm = citations.filter((c) => c.source === "llm");
   const verified = citations.filter((c) => c.verified);
   const unverified = citations.filter((c) => !c.verified);
 
   return {
     citations,
+    kb,
+    llm,
     verified,
     unverified,
     summary: {
       total: citations.length,
+      kbCount: kb.length,
+      llmCount: llm.length,
       verifiedCount: verified.length,
       unverifiedCount: unverified.length,
     },

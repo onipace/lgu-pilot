@@ -7,12 +7,15 @@ import WorkshopBanner from '@/components/pillar/workshop-banner';
 import SamplePrompts from '@/components/pillar/sample-prompts';
 import ExplainerPanel from '@/components/pillar/explainer-panel';
 import YalaChat from '@/components/yala/yala-chat';
+import ResponseModeToggle from '@/components/pillar/response-mode-toggle';
 import { MODULE_CONFIG, WORKSHOP_SESSION } from '@/lib/workshop-config';
 import UserAuthGate from '@/components/pillar/user-auth-gate';
+import type { ResponseMode } from '@/lib/ai/response-mode';
 
 export default function YalaPage() {
   const [explainerOpen, setExplainerOpen] = useState(false);
   const [promptsPanelOpen, setPromptsPanelOpen] = useState(false);
+  const [responseMode, setResponseMode] = useState<ResponseMode>('standard');
   const sendMessageRef = useRef<((text: string) => void) | null>(null);
 
   const config = MODULE_CONFIG.yala;
@@ -61,7 +64,7 @@ export default function YalaPage() {
 
         {/* Main chat */}
         <main className="flex flex-1 min-w-0 flex-col overflow-hidden">
-          <YalaChat onSendPrompt={handleSendPromptReady} />
+          <YalaChat onSendPrompt={handleSendPromptReady} responseMode={responseMode} />
 
           {/* Mobile quick prompts button */}
           <button
@@ -91,10 +94,13 @@ export default function YalaPage() {
         <p className="text-[10px] text-[hsl(216_20%_35%)]">
           {WORKSHOP_SESSION.poweredBy} · {WORKSHOP_SESSION.program} {WORKSHOP_SESSION.module}
         </p>
-        <div className="group relative">
-          <Brain className="h-4 w-4 text-[hsl(216_20%_35%)] cursor-pointer transition-colors hover:text-[hsl(38_95%_65%)]" />
-          <div className="absolute bottom-full right-0 mb-2 hidden rounded bg-[hsl(222_47%_15%)] px-3 py-1.5 text-xs text-[hsl(216_20%_70%)] shadow-lg group-hover:block whitespace-nowrap border border-[hsl(224_27%_25%)]">
-            Model: qwen3.7-plus
+        <div className="flex items-center gap-3">
+          <ResponseModeToggle value={responseMode} onChange={setResponseMode} accentColor="amber" />
+          <div className="group relative">
+            <Brain className="h-4 w-4 text-[hsl(216_20%_35%)] cursor-pointer transition-colors hover:text-[hsl(38_95%_65%)]" />
+            <div className="absolute bottom-full right-0 mb-2 hidden rounded bg-[hsl(222_47%_15%)] px-3 py-1.5 text-xs text-[hsl(216_20%_70%)] shadow-lg group-hover:block whitespace-nowrap border border-[hsl(224_27%_25%)]">
+              Model: qwen3.7-plus
+            </div>
           </div>
         </div>
       </div>

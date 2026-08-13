@@ -92,7 +92,10 @@ export interface DigitizeResult {
  */
 export async function digitizeScanFile(params: DigitizeParams): Promise<DigitizeResult> {
   const ocr = params.ocr ?? extractText;
-  const llm = params.llm ?? chatCompletion;
+  const llm =
+    params.llm ??
+    (async (system: string, user: string) =>
+      (await chatCompletion(system, user)).content);
 
   // 1. Hash computed BEFORE anything else (duplicate detection precedes OCR).
   const hash = sha256Hex(params.buffer);

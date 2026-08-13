@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Brain, Clock } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getOrCreateSessionId } from '@/components/pillar/participant-id';
+import type { ResponseMode } from '@/lib/ai/response-mode';
 
 interface YalaMessage {
   id: string;
@@ -41,15 +42,21 @@ function generateId(): string {
 interface YalaChatProps {
   onSendPrompt?: (fn: (text: string) => void) => void;
   participantName?: string | null;
+  responseMode?: ResponseMode;
 }
 
-export default function YalaChat({ onSendPrompt, participantName }: YalaChatProps) {
+export default function YalaChat({ onSendPrompt, participantName, responseMode }: YalaChatProps) {
   const [messages, setMessages] = useState<YalaMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [isThinking, setIsThinking] = useState(false);
+  const [thinkingText, setThinkingText] = useState('');
+  const [showTimeoutPrompt, setShowTimeoutPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Elapsed timer while loading
   useEffect(() => {
@@ -76,12 +83,21 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    setThinkingText('');
+    setIsThinking(false);
+    setShowTimeoutPrompt(false);
 
     const startTime = Date.now();
 
     const doFetch = async (): Promise<string> => {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000);
+      abortControllerRef.current = controller;
+
+      const setupTimeout = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setShowTimeoutPrompt(true), 120_000);
+      };
+      setupTimeout();
 
       try {
         const history = messages
@@ -97,6 +113,7 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
             history,
             participantName: participantName || undefined,
             sessionId: getOrCreateSessionId(),
+            responseMode,
           }),
           signal: controller.signal,
         });
@@ -109,6 +126,7 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
 
         let fullContent = '';
         let messageCreated = false;
+        let thinkingStarted = false;
         if (response.body) {
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
@@ -121,13 +139,20 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
               if (trimmedLine.startsWith('data: ') && !trimmedLine.includes('[DONE]')) {
                 try {
                   const parsed = JSON.parse(trimmedLine.slice(6));
-                  fullContent += parsed.text;
-                  if (!messageCreated) {
-                    const msg: YalaMessage = { id: assistantId, role: 'assistant', content: fullContent, timestamp: new Date() };
-                    setMessages(prev => [...prev, msg]);
-                    messageCreated = true;
-                  } else {
-                    setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullContent } : m));
+                  if (parsed.thinking) {
+                    if (!thinkingStarted) { thinkingStarted = true; setIsThinking(true); }
+                    setThinkingText(prev => (prev + parsed.thinking).slice(-500));
+                  }
+                  if (parsed.text) {
+                    if (thinkingStarted) { thinkingStarted = false; setIsThinking(false); }
+                    fullContent += parsed.text;
+                    if (!messageCreated) {
+                      const msg: YalaMessage = { id: assistantId, role: 'assistant', content: fullContent, timestamp: new Date() };
+                      setMessages(prev => [...prev, msg]);
+                      messageCreated = true;
+                    } else {
+                      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullContent } : m));
+                    }
                   }
                 } catch { /* skip */ }
               }
@@ -142,7 +167,7 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
 
         return fullContent;
       } finally {
-        clearTimeout(timeout);
+        if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
       }
     };
 
@@ -154,7 +179,7 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
 
     const getErrorMessage = (err: unknown): string => {
       if (err instanceof Error && err.name === 'AbortError') {
-        return 'Pasensya na, nag-timeout ang request. Maaaring maraming gumagamit ngayon — pakisubukan muli sa ilang sandali.';
+        return 'Na-cancel ang request. Maaaring subukan muli o ibahin ang tanong.';
       }
       const status = (err as { status?: number })?.status;
       if (status === 429) return 'Masyadong maraming request ngayon. Maghintay lang po ng ilang segundo at subukan muli.';
@@ -187,8 +212,12 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
       setMessages(prev => [...prev, errMsg]);
     } finally {
       setIsLoading(false);
+      setIsThinking(false);
+      setThinkingText('');
+      setShowTimeoutPrompt(false);
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
-  }, [messages, isLoading, participantName]);
+  }, [messages, isLoading, participantName, responseMode]);
 
   // Expose sendMessage to parent (for sample prompt sidebar)
   useEffect(() => {
@@ -198,6 +227,22 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
   const handleSubmit = () => sendMessage(input);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, []);
+
+  const handleContinueWaiting = () => {
+    setShowTimeoutPrompt(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowTimeoutPrompt(true), 120_000);
+  };
+
+  const handleCancelWait = () => {
+    setShowTimeoutPrompt(false);
+    abortControllerRef.current?.abort();
   };
 
   return (
@@ -244,12 +289,45 @@ export default function YalaChat({ onSendPrompt, participantName }: YalaChatProp
           })}
 
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl rounded-bl-sm bg-[hsl(224_35%_17%)] border border-[hsl(224_27%_22%)] px-4 py-3">
+            <div className="flex flex-col gap-2 items-start">
+              <div className="flex items-center gap-3 rounded-2xl rounded-bl-sm bg-[hsl(224_35%_17%)] border border-[hsl(224_27%_22%)] px-4 py-3">
                 <div className="flex items-center gap-1.5">
+                  {isThinking && <Brain className="h-3.5 w-3.5 text-[hsl(38_95%_65%)] animate-pulse" />}
                   <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
                 </div>
+                <span className="text-[11px] tabular-nums text-[hsl(216_20%_40%)]">
+                  {isThinking ? 'Thinking' : 'Working'}... {elapsedSec}s
+                </span>
               </div>
+              {isThinking && thinkingText && (
+                <div className="max-w-[80%] rounded-xl border-l-2 border-[hsl(38_95%_50%/0.4)] bg-[hsl(224_35%_14%)] px-3 py-2 max-h-24 overflow-y-auto">
+                  <p className="text-[11px] italic leading-relaxed text-[hsl(216_20%_45%)] line-clamp-4">
+                    {thinkingText.slice(-300)}
+                  </p>
+                </div>
+              )}
+              {showTimeoutPrompt && (
+                <div className="flex items-center gap-3 rounded-xl border border-[hsl(38_95%_55%/0.3)] bg-[hsl(38_60%_12%)] px-4 py-3 max-w-[80%]">
+                  <Clock className="h-4 w-4 text-[hsl(38_95%_65%)] shrink-0" />
+                  <span className="text-xs text-[hsl(38_80%_70%)] flex-1">
+                    Y.A.L.A. is still researching your question. Continue waiting?
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={handleContinueWaiting}
+                      className="rounded-lg bg-[hsl(158_64%_35%)] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[hsl(158_64%_30%)] transition-colors"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={handleCancelWait}
+                      className="rounded-lg border border-[hsl(0_72%_50%/0.4)] bg-[hsl(0_72%_50%/0.1)] px-3 py-1.5 text-[11px] font-semibold text-[hsl(0_72%_70%)] hover:bg-[hsl(0_72%_50%/0.2)] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

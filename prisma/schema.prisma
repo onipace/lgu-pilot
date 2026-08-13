@@ -466,3 +466,50 @@ model AgentDecision {
   @@index([module, createdAt])
   @@map("agent_decisions")
 }
+
+// ========== LLM CITATION CAPTURE (from PILLAR sync) ==========
+
+model LlmCitation {
+  id                   String    @id
+  doc_type             String
+  section_number       String?
+  raw_citation         String
+  title                String?
+  source_query         String?
+  module               String
+  relevance_rating     String    @default("medium")
+  status               String    @default("pending")
+  session_id           String?
+  user_id              String?
+  user_name            String?
+  occurrence_count     Int       @default(1)
+  distinct_query_count Int       @default(1)
+  first_seen_at        DateTime  @default(now())
+  last_seen_at         DateTime  @default(now())
+  notes                String?
+  reviewed_by          String?
+  reviewed_at          DateTime?
+  occurrences          LlmCitationOccurrence[]
+
+  @@index([status])
+  @@index([doc_type])
+  @@index([relevance_rating])
+  @@map("llm_citations")
+}
+
+model LlmCitationOccurrence {
+  id               String   @id
+  citation_id      String
+  source_query     String
+  response_text    String?
+  module           String
+  relevance_rating String   @default("medium")
+  session_id       String?
+  user_id          String?
+  user_name        String?
+  created_at       DateTime @default(now())
+  citation         LlmCitation @relation(fields: [citation_id], references: [id], onDelete: Cascade)
+
+  @@index([citation_id])
+  @@map("llm_citation_occurrences")
+}

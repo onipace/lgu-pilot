@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Loader2, FileSearch, Paperclip, X, Eye, Maximize2, Minimize2, GripHorizontal } from 'lucide-react';
+import { Loader2, FileSearch, Paperclip, X, Eye, Maximize2, Minimize2, GripHorizontal, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ReviewResultsPanel } from '@/components/obra/draft-wizard';
@@ -91,6 +91,15 @@ export default function DraftReviewer({ participantName }: DraftReviewerProps) {
       if (extractTimerRef.current) clearInterval(extractTimerRef.current);
     };
   }, [isExtracting]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (fileDataUrl && fileDataUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(fileDataUrl);
+      }
+    };
+  }, [fileDataUrl]);
 
   // Drag handlers
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -185,9 +194,13 @@ export default function DraftReviewer({ participantName }: DraftReviewerProps) {
     setFileMimeType(file.type);
     setIsExtracting(true);
 
-    const reader = new FileReader();
-    reader.onload = () => setFileDataUrl(reader.result as string);
-    reader.readAsDataURL(file);
+    // Use blob URL instead of data URL — blob URLs work in iframes for PDFs
+    // (Chrome blocks navigation to data: URLs in iframes for security)
+    if (fileDataUrl && fileDataUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(fileDataUrl);
+    }
+    const blobUrl = URL.createObjectURL(file);
+    setFileDataUrl(blobUrl);
 
     const doExtract = async () => {
       try {
@@ -238,6 +251,9 @@ export default function DraftReviewer({ participantName }: DraftReviewerProps) {
   };
 
   const clearUpload = () => {
+    if (fileDataUrl && fileDataUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(fileDataUrl);
+    }
     setUploadedFileName(null);
     setExtractError(null);
     setDraftText('');
@@ -557,11 +573,23 @@ export default function DraftReviewer({ participantName }: DraftReviewerProps) {
                   className="mx-auto max-h-full rounded-lg object-contain"
                 />
               ) : fileMimeType === 'application/pdf' && fileDataUrl ? (
-                <iframe
-                  src={fileDataUrl}
-                  title={uploadedFileName || 'Uploaded PDF'}
+                <object
+                  data={fileDataUrl}
+                  type="application/pdf"
                   className="h-full w-full rounded-lg border border-[hsl(224_27%_22%)]"
-                />
+                >
+                  <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+                    <FileText className="h-12 w-12 text-[hsl(216_20%_40%)]" />
+                    <p className="text-sm text-[hsl(216_20%_55%)]">Your browser cannot display this PDF inline.</p>
+                    <a
+                      href={fileDataUrl}
+                      download={uploadedFileName || 'document.pdf'}
+                      className="rounded-lg border border-[hsl(158_64%_45%/0.5)] bg-[hsl(158_64%_45%/0.1)] px-4 py-2 text-xs font-medium text-[hsl(158_64%_70%)] hover:bg-[hsl(158_64%_45%/0.2)] transition-colors"
+                    >
+                      Download PDF
+                    </a>
+                  </div>
+                </object>
               ) : (
                 <pre className="h-full overflow-auto whitespace-pre-wrap rounded-lg bg-[hsl(224_35%_13%)] p-4 font-mono text-xs text-[hsl(214_100%_90%)] leading-relaxed">
                   {draftText || 'No extracted text available.'}

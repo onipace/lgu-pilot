@@ -19,6 +19,8 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Raise V8 heap for the build worker (recharts admin pages exceed default heap on ECS)
+ENV NODE_OPTIONS=--max-old-space-size=8192
 
 # Public URLs baked at build time (override with --build-arg)
 ARG NEXT_PUBLIC_ELLA_URL=/ella

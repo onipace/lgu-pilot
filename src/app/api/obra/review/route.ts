@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse, NextRequest } from "next/server";
 import { withUserAuth } from "@/lib/user-auth-middleware";
 import { chatCompletion } from "@/lib/ai/llm";
+import { recordTokenUsage } from "@/lib/ai/token-meter";
 import { searchDocuments, buildRAGContext } from "@/lib/ai/rag";
 import { queryLightRAG } from "@/lib/ai/lightrag";
 import { OBRA_REVIEW_PROMPT } from "@/lib/ai/prompts";
@@ -20,7 +21,7 @@ interface ReviewRequestBody {
   sessionId: string;
 }
 
-export const POST = withUserAuth(async (request: NextRequest) => {
+export const POST = withUserAuth(async (request: NextRequest, { user }) => {
   try {
     const body: ReviewRequestBody = await request.json();
     const { draft, participantName, sessionId } = body;
@@ -94,11 +95,25 @@ export const POST = withUserAuth(async (request: NextRequest) => {
       ? `${promptWithAllowList}\n\nEXISTING ORDINANCES AND LEGAL PROVISIONS FOR REFERENCE:\n${fullContext}`
       : promptWithAllowList;
 
-    const responseText = await chatCompletion(
+    const { content: responseText, usage } = await chatCompletion(
       systemPrompt,
       `Please review the following draft ordinance for compliance with R.A. 7160:\n\n${draft}`,
       { maxTokens: 4096, temperature: 0.1 }
     );
+
+    // Record token usage (fire-and-forget)
+    if (usage) {
+      recordTokenUsage({
+        model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
+        input_tokens: usage.prompt_tokens,
+        output_tokens: usage.completion_tokens,
+        module: "obra",
+        route: "/api/obra/review",
+        user_id: user.user.id,
+        user_name: user.user.full_name,
+        session_id: sessionId,
+      });
+    }
 
     // Attempt to parse JSON from the response
     let reviewResult: ReviewResult;

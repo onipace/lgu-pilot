@@ -39,7 +39,7 @@ export async function streamChatResponse(
     max_tokens: options?.maxTokens ?? 2048,
     temperature: 0.3,
     stream: true,
-    stream_options: { include_usage: true },
+    stream_options: { include_usage: true }, // Request usage in final stream chunk
     messages: [
       { role: "system", content: fullSystemPrompt },
       ...messages.map((m) => ({
@@ -56,7 +56,14 @@ export async function chatCompletion(
   systemPrompt: string,
   userPrompt: string,
   options?: { maxTokens?: number; temperature?: number }
-): Promise<string> {
+): Promise<{
+  content: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}> {
   const llm = getLLMClient();
 
   const response = await llm.chat.completions.create({
@@ -69,5 +76,14 @@ export async function chatCompletion(
     ],
   });
 
-  return response.choices[0]?.message?.content || "";
+  return {
+    content: response.choices[0]?.message?.content || "",
+    usage: response.usage
+      ? {
+          prompt_tokens: response.usage.prompt_tokens,
+          completion_tokens: response.usage.completion_tokens,
+          total_tokens: response.usage.total_tokens,
+        }
+      : undefined,
+  };
 }

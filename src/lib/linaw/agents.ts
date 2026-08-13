@@ -295,20 +295,22 @@ async function realClassifyPlacement(input: {
   priors: { subjectFrequencies: Array<{ subject: string; count: number }> };
 }): Promise<ParsedLinawPlacement> {
   return parseLinawClassifyResponse(
-    await chatCompletion(
-      LINAW_CLASSIFY_SYSTEM_PROMPT,
-      buildLinawClassifyUserPrompt(
-        {
-          ordinanceNumber: input.ordinanceNumber,
-          seriesYear: input.seriesYear,
-          title: input.title,
-          content: input.content,
-          subjectTags: input.subjectTags,
-        },
-        input.priors
-      ),
-      { temperature: 0, maxTokens: 1024 }
-    )
+    (
+      await chatCompletion(
+        LINAW_CLASSIFY_SYSTEM_PROMPT,
+        buildLinawClassifyUserPrompt(
+          {
+            ordinanceNumber: input.ordinanceNumber,
+            seriesYear: input.seriesYear,
+            title: input.title,
+            content: input.content,
+            subjectTags: input.subjectTags,
+          },
+          input.priors
+        ),
+        { temperature: 0, maxTokens: 1024 }
+      )
+    ).content
   );
 }
 
@@ -728,7 +730,7 @@ async function realRefineCrossRefs(
   candidates: Array<{ index: number; quote: string; type: string; number: number; year: number }>
 ): Promise<Array<{ refIndex: number; type?: LinawRelationshipType; confidence?: number }> | null> {
   try {
-    const text = await chatCompletion(
+    const { content: text } = await chatCompletion(
       LINAW_CROSSREF_SYSTEM_PROMPT,
       buildLinawCrossRefUserPrompt(content, candidates),
       { temperature: 0, maxTokens: 1024 }
@@ -999,7 +1001,7 @@ async function realConflictLlm(
   sharedSubjects: string[]
 ): Promise<LinawConflictJudgement | null> {
   try {
-    const text = await chatCompletion(
+    const { content: text } = await chatCompletion(
       LINAW_CONFLICT_SYSTEM_PROMPT,
       buildLinawConflictUserPrompt(
         { ordinanceNumber: a.ordinanceNumber, seriesYear: a.seriesYear, title: a.title, content: a.content },
@@ -1550,7 +1552,7 @@ export async function summarizeReadyOrdinances(
       chatCompletion(LINAW_SUMMARY_SYSTEM_PROMPT, buildLinawSummaryUserPrompt(input), {
         temperature: 0,
         maxTokens: 512,
-      }));
+      }).then((r) => r.content));
 
   // Scope posture identical to classifyReadyOrdinances (ready rows only —
   // boundary rule 4). Implicit batch additionally skips already-summarized

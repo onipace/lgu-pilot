@@ -145,11 +145,13 @@ async function realClassify(input: {
   title: string;
 }): Promise<Array<{ label: string; confidence: number }>> {
   return parseClassificationResponse(
-    await chatCompletion(
-      CLASSIFICATION_SYSTEM_PROMPT,
-      buildClassificationUserPrompt(input.rawText, input.title),
-      { temperature: 0, maxTokens: 1024 }
-    )
+    (
+      await chatCompletion(
+        CLASSIFICATION_SYSTEM_PROMPT,
+        buildClassificationUserPrompt(input.rawText, input.title),
+        { temperature: 0, maxTokens: 1024 }
+      )
+    ).content
   );
 }
 
@@ -226,10 +228,12 @@ export async function runLikhaPipeline(
     opts.extractMetadata ??
     (async (rawText: string) =>
       parseMetadataResponse(
-        await chatCompletion(METADATA_SYSTEM_PROMPT, buildMetadataUserPrompt(rawText), {
-          temperature: 0,
-          maxTokens: 1024,
-        })
+        (
+          await chatCompletion(METADATA_SYSTEM_PROMPT, buildMetadataUserPrompt(rawText), {
+            temperature: 0,
+            maxTokens: 1024,
+          })
+        ).content
       ));
   // Agent 4 default — the REAL LLM classifier (decision D24). The Sprint-3
   // pass-through is gone; tests inject the `classify` seam (decision D32).

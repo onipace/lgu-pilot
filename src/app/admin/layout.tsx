@@ -14,6 +14,8 @@ import {
   X,
   Shield,
   ChevronDown,
+  Gauge,
+  FileCheck,
 } from 'lucide-react';
 import type { AdminUserRecord } from '@/types';
 
@@ -28,6 +30,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Analytics', href: '/admin', icon: BarChart2 },
   { label: 'Knowledge Base', href: '/admin/kb', icon: Database },
   { label: 'Users', href: '/admin/users', icon: Users },
+  { label: 'Token Meter', href: '/admin/tokens', icon: Gauge },
+  { label: 'Citations', href: '/admin/citations', icon: FileCheck },
   { label: 'Deployments', href: '/admin/deployments', icon: Server, superAdminOnly: true },
   { label: 'ECS', href: '/admin/ecs', icon: Globe, superAdminOnly: true },
 ];

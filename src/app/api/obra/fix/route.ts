@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse, NextRequest } from "next/server";
 import { withUserAuth } from "@/lib/user-auth-middleware";
 import { chatCompletion } from "@/lib/ai/llm";
+import { recordTokenUsage } from "@/lib/ai/token-meter";
 import {
   ensureParticipantSession,
   getWorkshopSessionId,
@@ -90,7 +91,7 @@ function buildFixPrompt(selectedFixes: SelectedFixes, reviewResult: FixRequestBo
   return parts.join("\n");
 }
 
-export const POST = withUserAuth(async (request: NextRequest) => {
+export const POST = withUserAuth(async (request: NextRequest, { user }) => {
   try {
     const body: FixRequestBody = await request.json();
     const { draft, selectedFixes, reviewResult, participantName, sessionId } = body;
@@ -150,11 +151,25 @@ export const POST = withUserAuth(async (request: NextRequest) => {
 
     const systemPrompt = buildFixPrompt(selectedFixes, reviewResult);
 
-    const fixedDraft = await chatCompletion(
+    const { content: fixedDraft, usage } = await chatCompletion(
       systemPrompt,
       `Revise the following ordinance draft by applying only the selected fixes:\n\n${draft}`,
       { maxTokens: 4096, temperature: 0.3 }
     );
+
+    // Record token usage (fire-and-forget)
+    if (usage) {
+      recordTokenUsage({
+        model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
+        input_tokens: usage.prompt_tokens,
+        output_tokens: usage.completion_tokens,
+        module: "obra",
+        route: "/api/obra/fix",
+        user_id: user.user.id,
+        user_name: user.user.full_name,
+        session_id: sessionId,
+      });
+    }
 
     if (!fixedDraft || fixedDraft.trim().length === 0) {
       return NextResponse.json(

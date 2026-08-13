@@ -8,6 +8,8 @@ const VALID_ID_PATTERNS = [
   /^ra7160-sec-[\w-]+$/,
   /^ord-[\w-]+$/,
   /^irr-irr-rule-[\w-]+$/,
+  /^sc-[\w-]+$/,       // SC jurisprudence: sc-sc-gr-182069
+  /^lo-[\w-]+$/,        // DILG opinions: lo-lo-022-s2018
 ];
 
 function isValidDocId(id: string): boolean {
