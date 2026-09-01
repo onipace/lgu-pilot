@@ -19,7 +19,7 @@ interface AgentPipelineProps {
 /** Arrow between pipeline elements; optionally carries the rose HITL pause marker. */
 function FlowArrow({ hitl }: { hitl?: boolean }) {
   return (
-    <span className="relative inline-flex items-center md:rotate-0 -rotate-90 md:my-0 my-1">
+    <span className="relative inline-flex items-center self-center md:rotate-0 -rotate-90 md:my-0 my-1">
       <ArrowRight className="h-4 w-4 text-[#94A3B8]" />
       {hitl && <Hand className="absolute -top-2 right-0 h-3.5 w-3.5 text-[#F43F5E]" />}
     </span>
@@ -36,11 +36,11 @@ export default function AgentPipeline({ agents, isProcessing, pipelineComplete, 
   const lastAgent = agents[agents.length - 1];
 
   return (
-    <div className={cn('flex flex-col md:flex-row md:flex-nowrap items-center gap-3 md:gap-4', className)}>
+    <div className={cn('flex flex-col md:flex-row md:flex-nowrap items-stretch gap-3 md:gap-4', className)}>
       {/* Input bookend — Brain */}
       <div
         className={cn(
-          'flex h-14 w-14 items-center justify-center rounded-2xl border border-[#283147] bg-[#1E293B]',
+          'flex h-14 w-14 items-center justify-center self-center rounded-2xl border border-[#283147] bg-[#1E293B]',
           isProcessing && 'glow-cyan animate-pulse-glow'
         )}
       >
@@ -51,7 +51,7 @@ export default function AgentPipeline({ agents, isProcessing, pipelineComplete, 
       {agents.map((agent, i) => (
         <Fragment key={agent.id}>
           <FlowArrow hitl={i > 0 && agents[i - 1].status === 'hitl'} />
-          <AgentCard agent={agent} />
+          <AgentCard agent={agent} className="self-center md:self-stretch" />
         </Fragment>
       ))}
 
@@ -61,7 +61,7 @@ export default function AgentPipeline({ agents, isProcessing, pipelineComplete, 
       {/* Output bookend — Database */}
       <div
         className={cn(
-          'flex h-14 w-14 items-center justify-center rounded-2xl border border-[#283147] bg-[#1E293B]',
+          'flex h-14 w-14 items-center justify-center self-center rounded-2xl border border-[#283147] bg-[#1E293B]',
           pipelineComplete && 'glow-emerald'
         )}
       >

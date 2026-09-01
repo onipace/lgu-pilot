@@ -10,12 +10,14 @@ import type { AgentState } from '@/types/agentic';
  * logic (no fetch, no timers, no DB), no module branching.
  *
  * Styling contract (DESIGN.md §5):
- * - Fixed h-56 (224px) uniform card, w-40, dark panel bg #1E293B.
+ * - Auto-height w-40 card, dark panel bg #1E293B; the pipeline row stretches
+ *   cards to a uniform height (2026-08-13 polish: user wanted no dead space —
+ *   idle card shows only icon + label).
  * - Circular number badge at -top-3 -left-3 in the agent's hex color.
  * - Status icon top-right (Loader2/Check/AlertTriangle/Hand), idle shows none.
  * - Processing: agent glow class + pulse (.animate-pulse-glow, disabled under
  *   prefers-reduced-motion in globals.css); HITL: rose border + glow-rose.
- * - h-8 border-top output section always rendered at the bottom.
+ * - Output row (border-top, h-8) renders ONLY on completion with a preview.
  */
 export default function AgentCard({ agent, className }: { agent: AgentState; className?: string }) {
   const isProcessing = agent.status === 'processing';
@@ -25,7 +27,7 @@ export default function AgentCard({ agent, className }: { agent: AgentState; cla
   return (
     <div
       className={cn(
-        'relative flex h-56 w-40 flex-col rounded-xl border bg-[#1E293B] p-3',
+        'relative flex w-40 flex-col rounded-xl border bg-[#1E293B] p-3',
         isHitl ? 'border-[#F43F5E] glow-rose' : 'border-[#283147]',
         isProcessing && cn(agent.glowClass, 'animate-pulse-glow'),
         isCompleted && agent.glowClass,
@@ -61,9 +63,6 @@ export default function AgentCard({ agent, className }: { agent: AgentState; cla
       {/* Name (compact) */}
       <div className="mt-2 text-center text-sm font-bold text-white">{agent.name}</div>
 
-      {/* Spacer to fill card height */}
-      <div className="flex-1" />
-
       {/* Hover tooltip — description appears on mouseover */}
       <div className="group/tooltip relative">
         <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-lg border border-[#334155] bg-[#0F1729] px-3 py-2 text-center text-xs leading-relaxed text-[#CBD5E1] opacity-0 shadow-xl transition-opacity duration-200 group-hover/tooltip:opacity-100">
@@ -72,14 +71,12 @@ export default function AgentCard({ agent, className }: { agent: AgentState; cla
         </div>
       </div>
 
-      {/* Output section (always rendered) */}
-      <div className="mt-2 flex h-8 items-center justify-center border-t border-[#283147] px-1 text-[10px]">
-        {isCompleted && agent.output?.preview ? (
+      {/* Output row — only once the agent completed with a preview */}
+      {isCompleted && agent.output?.preview && (
+        <div className="mt-2 flex h-8 items-center justify-center border-t border-[#283147] px-1 text-[10px]">
           <span className="max-w-full truncate text-[#E2E8F0]">{agent.output.preview}</span>
-        ) : (
-          <span className="text-[#475569]">—</span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

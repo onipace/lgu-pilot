@@ -161,13 +161,14 @@ export default function ScanEffect({ stream, imageSrc, onComplete, onCancel }: S
         ctx.clip();
 
         // Draw the same frame again, then enhance with canvas composite filters
-        ctx.filter = 'contrast(1.45) brightness(1.12) saturate(0.25)';
+        // (light-grey "paper" render: full grayscale, boosted contrast/brightness)
+        ctx.filter = 'grayscale(1) contrast(1.35) brightness(1.28)';
         ctx.drawImage(sourceEl as any, 0, 0, vw, vh);
         ctx.filter = 'none';
 
-        // Subtle blue-white tint overlay for "scanned document" feel
+        // Subtle light-grey tint overlay for "scanned document" feel
         ctx.globalAlpha = 0.06;
-        ctx.fillStyle = '#E0F7FA';
+        ctx.fillStyle = '#E2E8F0';
         ctx.fillRect(0, 0, vw, scanY);
         ctx.globalAlpha = 1.0;
 
@@ -290,8 +291,8 @@ export default function ScanEffect({ stream, imageSrc, onComplete, onCancel }: S
         // Scan complete — capture the enhanced frame
         setPhase('complete');
 
-        // Draw final enhanced full frame
-        ctx.filter = 'contrast(1.45) brightness(1.12) saturate(0.25)';
+        // Draw final enhanced full frame (light-grey paper render)
+        ctx.filter = 'grayscale(1) contrast(1.35) brightness(1.28)';
         ctx.drawImage(sourceEl as any, 0, 0, vw, vh);
         ctx.filter = 'none';
 
@@ -321,12 +322,12 @@ export default function ScanEffect({ stream, imageSrc, onComplete, onCancel }: S
   }, [stream, imageSrc, isMjpeg, onComplete, playScanSound]);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl border-2 border-[#00DCFF]/30 bg-black">
+    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-[#00DCFF]/30 bg-black">
       {/* Scan canvas (renders video + all effects) */}
       <canvas
         ref={canvasRef}
-        className="w-full"
-        style={{ objectFit: 'contain', maxHeight: '70vh' }}
+        className="h-full w-full"
+        style={{ objectFit: 'contain' }}
       />
 
       {/* Hidden video element (source for MediaStream mode) */}
@@ -358,11 +359,11 @@ export default function ScanEffect({ stream, imageSrc, onComplete, onCancel }: S
 
       {/* Complete overlay — green flash + checkmark */}
       {phase === 'complete' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#22C55E]/10 animate-pulse">
+        <div className="absolute inset-0 flex items-center justify-center bg-[#E2E8F0]/10 animate-pulse">
           <div className="flex flex-col items-center gap-2 rounded-2xl bg-black/60 px-8 py-6 backdrop-blur-sm">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#22C55E]/20">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#E2E8F0]/20">
               <svg
-                className="h-10 w-10 text-[#22C55E]"
+                className="h-10 w-10 text-[#E2E8F0]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -371,7 +372,7 @@ export default function ScanEffect({ stream, imageSrc, onComplete, onCancel }: S
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span className="text-lg font-bold tracking-widest text-[#22C55E]">
+            <span className="text-lg font-bold tracking-widest text-[#E2E8F0]">
               SCAN COMPLETE
             </span>
           </div>

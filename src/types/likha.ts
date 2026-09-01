@@ -25,10 +25,10 @@ export interface LikhaAgentDef {
 
 export const LIKHA_AGENT_DEFS: LikhaAgentDef[] = [
   { id: 1, name: 'Ingestor',          description: 'Validates uploads, computes file hashes, stores raw file records', functionName: 'ingestFiles',      color: '#F59E0B', glowClass: 'glow-amber',   delayMs: 1000, outputLabel: 'Files validated & hashed' },
-  { id: 2, name: 'OCR Extractor',     description: 'Extracts text from PDFs/images via module-owned OpenRouter wrapper', functionName: 'extractText',    color: '#10B981', glowClass: 'glow-emerald', delayMs: 1600, outputLabel: 'Text extracted' },
-  { id: 3, name: 'Metadata Parser',   description: 'Parses ordinance number, series year, title, section count', functionName: 'parseMetadata',    color: '#8B5CF6', glowClass: 'glow-violet',  delayMs: 1400, outputLabel: 'Metadata parsed' },
-  { id: 4, name: 'Subject Classifier', description: 'Suggests subject categories with confidence scores', functionName: 'classifySubject',  color: '#0EA5E9', glowClass: 'glow-sky',     delayMs: 1200, outputLabel: 'Subjects suggested' },
-  { id: 5, name: 'Legal Validator',   description: 'Flags low-confidence extractions; raises HITL gates', functionName: 'validateExtraction', color: '#F43F5E', glowClass: 'glow-rose',   delayMs: 1200, outputLabel: 'Validation complete' },
+  { id: 2, name: 'Extractor',         description: 'Extracts text from PDFs/images via module-owned OpenRouter wrapper', functionName: 'extractText',    color: '#10B981', glowClass: 'glow-emerald', delayMs: 1600, outputLabel: 'Text extracted' },
+  { id: 3, name: 'Parser',            description: 'Parses ordinance number, series year, title, section count', functionName: 'parseMetadata',    color: '#8B5CF6', glowClass: 'glow-violet',  delayMs: 1400, outputLabel: 'Metadata parsed' },
+  { id: 4, name: 'Classifier',        description: 'Suggests subject categories with confidence scores', functionName: 'classifySubject',  color: '#0EA5E9', glowClass: 'glow-sky',     delayMs: 1200, outputLabel: 'Subjects suggested' },
+  { id: 5, name: 'Validator',         description: 'Flags low-confidence extractions; raises HITL gates', functionName: 'validateExtraction', color: '#F43F5E', glowClass: 'glow-rose',   delayMs: 1200, outputLabel: 'Validation complete' },
   { id: 6, name: 'Archiver',          description: 'Publishes verified records and updates the BM25 index', functionName: 'publishToArchive', color: '#6366F1', glowClass: 'glow-indigo', delayMs: 1000, outputLabel: 'Published to archive' },
 ];
 

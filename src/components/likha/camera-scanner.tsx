@@ -27,6 +27,7 @@ import {
   Scan,
   Monitor,
   Smartphone,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { processDocumentImage, assemblePagesToPDF, loadOpenCV, isCVReady } from '@/lib/likha/document-processor';
@@ -89,10 +90,10 @@ export default function CameraScanner({
   const [state, setState] = useState<ScannerState>('idle');
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+  const [showDevices, setShowDevices] = useState(false);
   const [resolution, setResolution] = useState({ width: 0, height: 0 });
   const [cvReady, setCvReady] = useState(false);
   const [cvLoading, setCvLoading] = useState(false);
-  const [cvError, setCvError] = useState<string | null>(null);
   const [pages, setPages] = useState<PageData[]>([]);
   const [autoEdge, setAutoEdge] = useState(true);
   const [grayscale, setGrayscale] = useState(false);
@@ -102,6 +103,9 @@ export default function CameraScanner({
   // ── Scan effect (cinematic scanner bar animation for demo) ──
   const [showScanEffect, setShowScanEffect] = useState(false);
   const scanStreamRef = useRef<MediaStream | null>(null);
+
+  // ── Two-pane output: persist the last captured document in the right pane ──
+  const [lastCapture, setLastCapture] = useState<{ url: string; at: string } | null>(null);
 
   // ── IP Camera mode (MJPEG stream from phone — zero laptop software) ──
   const [useIpCamera, setUseIpCamera] = useState(false);
@@ -159,7 +163,6 @@ export default function CameraScanner({
         })
         .catch((err) => {
           console.warn('[CameraScanner] OpenCV.js failed to load:', err);
-          setCvError('OpenCV.js unavailable — auto edge detection disabled. Manual capture still works.');
           setCvLoading(false);
         });
     } else {
@@ -463,6 +466,13 @@ export default function CameraScanner({
       }
 
       try {
+        // Persist the captured document in the right pane until the next scan
+        const previewUrl = URL.createObjectURL(capturedBlob);
+        setLastCapture((prev) => {
+          if (prev) URL.revokeObjectURL(prev.url);
+          return { url: previewUrl, at: new Date().toLocaleTimeString() };
+        });
+
         // Create thumbnail from the captured blob
         const thumbCanvas = document.createElement('canvas');
         const thumbSize = 120;
@@ -578,6 +588,57 @@ export default function CameraScanner({
 
   return (
     <div className={cn('space-y-4', className)}>
+      {/* ── Available cameras (collapsible, collapsed by default) ── */}
+      {devices.length > 0 && (
+        <div className="rounded-xl border border-[#283147] bg-[#1E293B]">
+          <button
+            type="button"
+            onClick={() => setShowDevices((v) => !v)}
+            aria-expanded={showDevices}
+            className="flex min-h-11 w-full items-center justify-between px-4 py-2 text-left"
+          >
+            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]">
+              <Camera className="h-3.5 w-3.5 text-[#22D3EE]" />
+              Available Cameras
+              <span className="rounded bg-[#22D3EE]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#22D3EE]">
+                {devices.length}
+              </span>
+            </span>
+            <ChevronDown
+              className={cn('h-4 w-4 text-[#475569] transition-transform', showDevices && 'rotate-180')}
+            />
+          </button>
+          {showDevices && (
+            <div className="border-t border-[#283147] px-4 py-3">
+              <ul className="space-y-1">
+                {devices.map((d, i) => (
+                  <li key={d.deviceId} className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
+                    {deviceIcon(d.label || '')}
+                    <span>{d.label || `Camera ${i + 1}`}</span>
+                    {d.label.toLowerCase().includes('usb') && (
+                      <span className="rounded bg-[#22D3EE]/10 px-1.5 py-0.5 text-[9px] text-[#22D3EE]">
+                        USB
+                      </span>
+                    )}
+                    {(d.label.toLowerCase().includes('fold') ||
+                      d.label.toLowerCase().includes('phone') ||
+                      d.label.toLowerCase().includes('mobile')) && (
+                      <span className="rounded bg-[#A855F7]/10 px-1.5 py-0.5 text-[9px] text-[#A855F7]">
+                        Wireless
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[10px] text-[#475569]">
+                💡 Plug in a USB webcam or open this page on your phone to scan wirelessly.
+                Samsung Fold 7 users: fold the phone ~100° and place it on the table for a hands-free scan.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Device selector bar ── */}
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#283147] bg-[#1E293B] p-3">
         {/* Camera picker */}
@@ -716,8 +777,25 @@ export default function CameraScanner({
         )}
       </div>
 
-      {/* ── Camera viewport ── */}
-      <div className="relative overflow-hidden rounded-xl border-2 border-[#283147] bg-black">
+      {/* ── Two-pane scanner: live view (left) + scanned output (right) ──
+          Both cards use a vertical 3:4 "paper document" aspect ratio and the
+          pair is centered (max-w caps the row so cards read like sheets of
+          paper rather than full-width panels). */}
+      <div className="mx-auto grid w-full max-w-[920px] grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* ── LEFT: live camera view ── */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]">
+              ① Live Camera
+            </span>
+            {state === 'camera-ready' && !(useIpCamera && mjpegConnected) && (
+              <span className="flex items-center gap-1 text-[10px] text-[#22C55E]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E] animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-[#283147] bg-black">
         {/* MJPEG live preview (IP camera mode) */}
         {useIpCamera && mjpegConnected && (
           <img
@@ -725,10 +803,10 @@ export default function CameraScanner({
             alt="IP Camera feed"
             crossOrigin="anonymous"
             className={cn(
-              'w-full bg-black transition-opacity',
+              'h-full w-full bg-black transition-opacity',
               state === 'camera-ready' ? 'opacity-100' : 'opacity-0'
             )}
-            style={{ objectFit: 'contain', maxHeight: '500px' }}
+            style={{ objectFit: 'contain' }}
           />
         )}
         <video
@@ -737,11 +815,11 @@ export default function CameraScanner({
           playsInline
           muted
           className={cn(
-            'w-full bg-black transition-opacity',
+            'h-full w-full bg-black transition-opacity',
             state === 'camera-ready' && !(useIpCamera && mjpegConnected) ? 'opacity-100' : 'opacity-0',
             useIpCamera && mjpegConnected && 'hidden'
           )}
-          style={{ objectFit: 'contain', maxHeight: '500px' }}
+          style={{ objectFit: 'contain' }}
         />
 
         {/* Edge detection overlay canvas (positioned over video) */}
@@ -753,7 +831,7 @@ export default function CameraScanner({
 
         {/* Idle / loading state */}
         {state === 'idle' && (
-          <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 p-8 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="rounded-full bg-[#1E293B] p-4">
               <Camera className="h-10 w-10 text-[#94A3B8]" />
             </div>
@@ -799,22 +877,56 @@ export default function CameraScanner({
           </div>
         )}
 
-        {/* OpenCV error notice */}
-        {cvError && (
-          <div className="absolute top-3 left-3 right-3 rounded-lg border border-[#FACC15]/30 bg-[#1E293B]/95 px-3 py-2">
-            <p className="text-[10px] text-[#FACC15]">{cvError}</p>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* ── Scan Effect overlay (cinematic scanner bar) ── */}
-      {showScanEffect && (
-        <ScanEffect
-          stream={useIpCamera ? undefined : scanStreamRef.current ?? undefined}
-          imageSrc={useIpCamera && mjpegConnected ? mjpegUrl : undefined}
-          onComplete={handleScanComplete}
-        />
-      )}
+        {/* ── RIGHT: scanned output (persists until next scan) ── */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]">
+              ② Scanned Document
+            </span>
+            {lastCapture && !showScanEffect && (
+              <span className="flex items-center gap-1 rounded bg-[#94A3B8]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#CBD5E1]">
+                <CheckCircle2 className="h-3 w-3" />
+                Captured {lastCapture.at}
+              </span>
+            )}
+          </div>
+
+          {showScanEffect ? (
+            <ScanEffect
+              stream={useIpCamera ? undefined : scanStreamRef.current ?? undefined}
+              imageSrc={useIpCamera && mjpegConnected ? mjpegUrl : undefined}
+              onComplete={handleScanComplete}
+            />
+          ) : lastCapture ? (
+            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-[#94A3B8]/40 bg-black">
+              <img
+                src={lastCapture.url}
+                alt="Last scanned document"
+                className="h-full w-full bg-black"
+                style={{ objectFit: 'contain' }}
+              />
+              <div className="absolute left-3 top-3 rounded bg-[#CBD5E1]/90 px-2 py-0.5 text-[10px] font-bold tracking-widest text-[#0F172A]">
+                SCANNED
+              </div>
+            </div>
+          ) : (
+            <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#283147] bg-[#0F1729]/50 p-8 text-center">
+              <div className="rounded-full bg-[#1E293B] p-4">
+                <Scan className="h-8 w-8 text-[#475569]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[#94A3B8]">Scanned document appears here</p>
+                <p className="mt-1 text-xs text-[#475569]">
+                  Click SCAN DOCUMENT — the captured page stays in this window until your next scan.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── Capture controls ── */}
       {state === 'camera-ready' && !showScanEffect && (
@@ -918,38 +1030,6 @@ export default function CameraScanner({
         </div>
       )}
 
-      {/* ── Device hints ── */}
-      {state === 'idle' && devices.length > 0 && (
-        <div className="rounded-lg border border-[#283147] bg-[#1E293B]/50 px-4 py-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8]">
-            Available Cameras
-          </p>
-          <ul className="space-y-1">
-            {devices.map((d, i) => (
-              <li key={d.deviceId} className="flex items-center gap-2 text-[11px] text-[#94A3B8]">
-                {deviceIcon(d.label || '')}
-                <span>{d.label || `Camera ${i + 1}`}</span>
-                {d.label.toLowerCase().includes('usb') && (
-                  <span className="rounded bg-[#22D3EE]/10 px-1.5 py-0.5 text-[9px] text-[#22D3EE]">
-                    USB
-                  </span>
-                )}
-                {(d.label.toLowerCase().includes('fold') ||
-                  d.label.toLowerCase().includes('phone') ||
-                  d.label.toLowerCase().includes('mobile')) && (
-                  <span className="rounded bg-[#A855F7]/10 px-1.5 py-0.5 text-[9px] text-[#A855F7]">
-                    Wireless
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-[10px] text-[#475569]">
-            💡 Plug in a USB webcam or open this page on your phone to scan wirelessly.
-            Samsung Fold 7 users: fold the phone ~100° and place it on the table for a hands-free scan.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

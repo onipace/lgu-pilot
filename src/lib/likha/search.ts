@@ -120,6 +120,31 @@ function termFrequency(bag: string[]): Map<string, number> {
   return tf;
 }
 
+/**
+ * Prefix-tolerant frequency lookup (2026-08-13 demo-search polish): real
+ * ordinance texts say "permit"/"fee" while users type "permits"/"fees".
+ * Exact token match wins; otherwise sum frequencies of terms that are mutual
+ * prefixes (min 4 chars to avoid noise). No stemmer needed at pilot scale.
+ */
+function termMatches(tf: Map<string, number>, term: string): { freq: number; idfTerm: string | null } {
+  const exact = tf.get(term);
+  if (exact) return { freq: exact, idfTerm: term };
+  if (term.length < 4) return { freq: 0, idfTerm: null };
+  let freq = 0;
+  let best = 0;
+  let idfTerm: string | null = null;
+  for (const [t, f] of tf) {
+    if (t.length >= 4 && (t.startsWith(term) || term.startsWith(t))) {
+      freq += f;
+      if (f > best) {
+        best = f;
+        idfTerm = t;
+      }
+    }
+  }
+  return { freq, idfTerm };
+}
+
 /** Document length used for BM25 normalization (title terms count twice). */
 function documentLength(doc: LikhaIndexDoc): number {
   return doc.terms.length + doc.titleTerms.length;
@@ -143,9 +168,9 @@ export function scoreDocument(
 
   let score = 0;
   for (const term of queryTerms) {
-    const freq = tf.get(term);
-    if (!freq) continue;
-    const termIdf = idf[term] ?? 0;
+    const { freq, idfTerm } = termMatches(tf, term);
+    if (!freq || !idfTerm) continue;
+    const termIdf = idf[idfTerm] ?? 0;
     if (termIdf <= 0) continue;
     score +=
       (termIdf * (freq * (BM25_K1 + 1))) /
@@ -469,3 +494,19 @@ export const likhaSearch: LikhaSearch = {
   rebuildIndex: () => bound().rebuildIndex(),
   stats: () => bound().stats(),
 };
+
+/**
+ * Guardrail (2026-08-13, ghost-duplicate fix): rebuild the index whenever its
+ * doc count diverges from the DB's published row count. The original
+ * self-heal only triggered on an EMPTY index, so a stale non-empty index
+ * (e.g. a runtime artifact accidentally shipped in a build) served ghost
+ * documents forever. Count-mismatch healing closes that hole.
+ */
+export async function ensureLikhaIndexFresh(): Promise<void> {
+  const published = await prisma.archivedOrdinance.count({
+    where: { archiveStatus: 'published' },
+  });
+  if (likhaSearch.stats().totalDocs !== published) {
+    await likhaSearch.rebuildIndex();
+  }
+}

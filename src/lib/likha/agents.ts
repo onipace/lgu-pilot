@@ -84,10 +84,10 @@ interface RecordDecisionParams {
 }
 
 const AGENT_NAMES: Record<number, string> = {
-  2: 'OCR Extractor',
-  3: 'Metadata Parser',
-  4: 'Subject Classifier',
-  5: 'Legal Validator',
+  2: 'Extractor',
+  3: 'Parser',
+  4: 'Classifier',
+  5: 'Validator',
   6: 'Archiver',
 };
 
@@ -614,7 +614,7 @@ export async function applyVerificationDecision(params: {
         module: 'likha',
         pipelineId,
         agentId: 5,
-        agentName: 'Legal Validator',
+        agentName: 'Validator',
         action,
         inputSnapshot: JSON.stringify({ recordId, action: body.action }),
         outputSnapshot,

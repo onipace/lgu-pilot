@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withUserAuth } from "@/lib/user-auth-middleware";
-import { likhaSearch } from "@/lib/likha/search";
+import { likhaSearch, ensureLikhaIndexFresh } from "@/lib/likha/search";
 import { logModuleEvent } from "@/lib/logger";
 import type {
   LikhaArchiveListItem,
@@ -119,19 +119,20 @@ export const GET = withUserAuth(async (request: NextRequest, { user }) => {
       limit,
     };
 
-    let result = likhaSearch.search(q, filters);
-    if (likhaSearch.stats().totalDocs === 0) {
-      // Index empty or missing → lazily rebuild from published rows (decision D13).
-      await likhaSearch.rebuildIndex();
+    const beforeDocs = likhaSearch.stats().totalDocs;
+    await ensureLikhaIndexFresh();
+    const afterDocs = likhaSearch.stats().totalDocs;
+    if (afterDocs !== beforeDocs) {
+      // Index was stale (empty OR count mismatch) → it has been rebuilt; audit it.
       logModuleEvent({
         module: "likha",
         interactionType: "likha_index_rebuild",
-        content: JSON.stringify({ trigger: "archive-search", q }),
+        content: JSON.stringify({ trigger: "archive-search", q, beforeDocs, afterDocs }),
         ipAddress: "127.0.0.1",
         participantSessionId: "likha-" + user.user.id,
       });
-      result = likhaSearch.search(q, filters);
     }
+    const result = likhaSearch.search(q, filters);
 
     const items: LikhaArchiveListItem[] = result.items.map((hit) => ({
       ...hit,

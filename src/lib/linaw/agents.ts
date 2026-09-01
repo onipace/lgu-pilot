@@ -63,7 +63,7 @@ export const LINAW_AGENT_NAMES: Record<number, string> = {
   0: 'Summary Generation',
   1: 'Inventory Analyst',
   2: 'Code Classifier',
-  3: 'Cross-Reference Scanner',
+  3: 'Cross-Referencer',
   4: 'Conflict Detector',
   5: 'Relationship Reviewer',
   6: 'Code Assembler',
@@ -273,7 +273,7 @@ export interface LinawClassifyOptions {
 }
 
 /** Gate thresholds (decision D5 — mutually exclusive). */
-function classifyGate(confidence: number): 'low_confidence_classification' | 'code_placement' | undefined {
+export function classifyGate(confidence: number): 'low_confidence_classification' | 'code_placement' | undefined {
   if (confidence < 0.6) return 'low_confidence_classification';
   if (confidence < 0.7) return 'code_placement';
   return undefined;

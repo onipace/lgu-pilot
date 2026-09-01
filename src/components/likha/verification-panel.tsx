@@ -328,7 +328,7 @@ export default function VerificationPanel({
               >
                 <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
                 <p>
-                  <span className="font-semibold">Agent note (Legal Validator): </span>
+                  <span className="font-semibold">Agent note (Validator): </span>
                   {gate.exceptions.join('; ')}
                 </p>
               </div>

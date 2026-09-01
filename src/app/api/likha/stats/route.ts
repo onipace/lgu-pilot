@@ -11,10 +11,13 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withUserAuth } from "@/lib/user-auth-middleware";
-import { likhaSearch } from "@/lib/likha/search";
+import { likhaSearch, ensureLikhaIndexFresh } from "@/lib/likha/search";
 import type { LikhaStatsResponse } from "@/types/likha";
 
 export const GET = withUserAuth(async () => {
+  // Guardrail (2026-08-13): heal a stale index before reporting its size.
+  await ensureLikhaIndexFresh();
+
   const [total, published, pendingReview, flagged] = await Promise.all([
     prisma.archivedOrdinance.count(),
     prisma.archivedOrdinance.count({ where: { archiveStatus: "published" } }),
