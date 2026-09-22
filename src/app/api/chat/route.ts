@@ -28,7 +28,8 @@ interface ChatRequestBody {
 export const POST = withUserAuth(async (request: NextRequest, { user }) => {
   try {
     const body: ChatRequestBody = await request.json();
-    const { module, message, history, participantName, sessionId } = body;
+    const { module, message, participantName, sessionId } = body;
+    const history = body.history || [];
     const userId = user.user.id;
     const userFullName = user.user.full_name;
 
@@ -81,15 +82,24 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
 
     if (module === "ella") {
       // Hybrid RAG: BM25 + LightRAG knowledge graph for legal research
-      ragContext = await getHybridContext(message, "ella", { limit: 6 });
+      try {
+        ragContext = await getHybridContext(message, "ella", { limit: 6 });
+      } catch {
+        console.warn("[chat] LightRAG unavailable — proceeding without RAG context for ELLA");
+      }
       searchResults = searchDocuments(message, { limit: 6 });
     } else if (module === "yala") {
       // YALA: knowledge base context + hybrid legal context
       const knowledgeContext = getYalaKnowledgeContext(message);
-      const hybridContext = await getHybridContext(message, "yala", {
-        docTypes: ["ordinance", "ra7160"],
-        limit: 3,
-      });
+      let hybridContext: string | undefined;
+      try {
+        hybridContext = await getHybridContext(message, "yala", {
+          docTypes: ["ordinance", "ra7160"],
+          limit: 3,
+        });
+      } catch {
+        console.warn("[chat] LightRAG unavailable — proceeding without RAG context for YALA");
+      }
       ragContext = [knowledgeContext, hybridContext].filter(Boolean).join("\n\n---\n\n") || undefined;
       searchResults = searchDocuments(message, { docTypes: ["ordinance", "ra7160"], limit: 3 });
     }
