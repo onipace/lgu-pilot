@@ -2,8 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { withUserAuth } from "@/lib/user-auth-middleware";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-// Hybrid OCR: qwen3.7-plus for images (better reasoning), gemini-2.5-flash for PDFs (supports PDF input)
-const IMAGE_EXTRACT_MODEL = "qwen/qwen3.7-plus";
+// Hybrid OCR: qwen3.8-flash for images (better reasoning), gemini-2.5-flash for PDFs (supports PDF input)
+const IMAGE_EXTRACT_MODEL = "qwen/qwen3.8-flash";
 const PDF_EXTRACT_MODEL = "google/gemini-2.5-flash";
 
 // Use Node.js runtime so large multipart uploads are handled without edge limits

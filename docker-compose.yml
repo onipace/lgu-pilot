@@ -54,15 +54,45 @@ services:
     environment:
       - DATABASE_URL=postgresql://esangguni:${POSTGRES_PASSWORD}@esangguni-postgres:5432/esangguni
       - LIGHTRAG_SERVICE_URL=${LIGHTRAG_SERVICE_URL:-}
+      - TOKEN_METER_URL=http://token-meter:3084
     depends_on:
       postgres:
         condition: service_healthy
+      token-meter:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - esangguni-network
+
+  # ─────────────────────────────────────────────
+  # Token Meter — LLM usage tracking sidecar (SQLite)
+  # Reached by the app over the shared network at http://token-meter:3084
+  # Port intentionally NOT published to the host (internal-only).
+  # ─────────────────────────────────────────────
+  token-meter:
+    build:
+      context: ./token-meter
+      dockerfile: Dockerfile
+    image: esangguni-token-meter:latest
+    container_name: token-meter
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3084
+      - DB_PATH=/data/token-meter.db
+    volumes:
+      - token-meter-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3084/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - esangguni-network
 
@@ -100,6 +130,8 @@ services:
 
 volumes:
   pgdata:
+    driver: local
+  token-meter-data:
     driver: local
 
 networks:

@@ -160,7 +160,7 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
     // Record token usage (fire-and-forget)
     if (usage) {
       recordTokenUsage({
-        model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
+        model: process.env.LLM_MODEL || "qwen/qwen3.8-flash",
         input_tokens: usage.prompt_tokens,
         output_tokens: usage.completion_tokens,
         module: "obra",

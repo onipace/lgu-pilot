@@ -1,0 +1,16 @@
+{
+  "name": "token-meter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PILLAR Token Meter — lightweight token usage tracking service with SQLite",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0"
+  }
+}

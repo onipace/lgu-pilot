@@ -99,7 +99,7 @@ export default function YalaPage() {
           <div className="group relative">
             <Brain className="h-4 w-4 text-[hsl(216_20%_35%)] cursor-pointer transition-colors hover:text-[hsl(38_95%_65%)]" />
             <div className="absolute bottom-full right-0 mb-2 hidden rounded bg-[hsl(222_47%_15%)] px-3 py-1.5 text-xs text-[hsl(216_20%_70%)] shadow-lg group-hover:block whitespace-nowrap border border-[hsl(224_27%_25%)]">
-              Model: qwen3.7-plus
+              Model: qwen3.8-flash
             </div>
           </div>
         </div>

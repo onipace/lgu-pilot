@@ -5,7 +5,7 @@
 // multimodal contract. Same OPENROUTER_API_KEY env var as llm.ts.
 //
 // Models (see PDF_MODEL / IMAGE_MODEL below): Gemini 2.5 Flash for PDFs,
-// Qwen 3.7 Plus for JPEG/PNG scans.
+// Qwen 3.8 Flash for JPEG/PNG scans.
 // temperature 0, max_tokens 8192, 60s timeout per attempt, at most 2 attempts
 // (retry ONLY on timeout/abort, network failure, or HTTP >= 500).
 // Dependency-free: Node built-ins + global fetch only. Zero console logging,
@@ -13,7 +13,7 @@
 
 const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const PDF_MODEL = 'google/gemini-2.5-flash';
-const IMAGE_MODEL = 'qwen/qwen3.7-plus';
+const IMAGE_MODEL = 'qwen/qwen3.8-flash';
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 2;
 const MAX_TOKENS = 8192;
