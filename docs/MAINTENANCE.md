@@ -69,6 +69,22 @@ CR-001 was verified to have zero references in AI module files (ELLA/OBRA/YALA/L
 
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
+### Symptom: Chat streams thinking-only, users see nothing (2026-10-23 second incident)
+
+**Where this appears:** ELLA, YALA chat shows spinner then nothing; OBRA returns empty response
+**Backend behavior:** stream completes with `[DONE]` after ~166 `{"thinking": ...}` chunks — zero `{"text": ...}` chunks emitted
+
+**Root cause:** `qwen/qwen3.7-plus` and `qwen/qwen3.8-flash` on OpenRouter are **hybrid-reasoning models**. They emit `reasoning` field tokens BEFORE any final answer. With `max_tokens=2048`, the entire budget was consumed by reasoning tokens and no content ever reached the client.
+
+**Fix applied:** Commit `a0c8a12` — added `reasoning: { enabled: false }` to OpenRouter calls in `src/lib/ai/llm.ts` for both `streamChatResponse` and `chatCompletion`. Also raised default `max_tokens` from 2048 → 4096 (stream) and 4096 → 8192 (non-stream).
+
+**Verified live:**
+- ELLA: 166 text chunks, 0 thinking ✅
+- YALA: 182 text chunks, 0 thinking ✅
+- OBRA: full JSON review with LGU-type detection ✅
+
+**Rule for future:** Do NOT set `max_tokens` below 4096 when using OpenRouter with Qwen models unless reasoning is explicitly disabled. The `reasoning` field can consume 500-2000 tokens before any `content` is emitted.
+
 ### Symptom: All AI modules silent — clients see "no response received"
 
 **Where this appears:** ELLA, OBRA, YALA all hang with no output
