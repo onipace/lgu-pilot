@@ -99,7 +99,7 @@ Follow the required Philippine municipal ordinance structure with TITLE, WHEREAS
     // Record token usage (fire-and-forget)
     if (usage) {
       recordTokenUsage({
-        model: process.env.LLM_MODEL || "qwen/qwen3.8-flash",
+        model: process.env.LLM_MODEL || "qwen/qwen3.7-plus",
         input_tokens: usage.prompt_tokens,
         output_tokens: usage.completion_tokens,
         module: "obra",

@@ -5,13 +5,13 @@
 // per-attempt timeout). ZERO imports from any other module — Node built-ins
 // and the global fetch only. No DB access, no logging.
 //
-// Contract: gemini-2.5-flash for PDFs / qwen3.8-flash for images, temperature
+// Contract: gemini-2.5-flash for PDFs / qwen3.7-plus for images, temperature
 // 0, max_tokens 8192, 60s per attempt, at most 2 attempts. Retry ONLY on
 // timeout/abort, network failure, or HTTP >= 500. 4xx and empty text fail fast.
 
 const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const PDF_MODEL = 'google/gemini-2.5-flash';
-const IMAGE_MODEL = 'qwen/qwen3.8-flash';
+const IMAGE_MODEL = 'qwen/qwen3.7-plus';
 export const DEFAULT_TIMEOUT_MS = 60_000;
 export const MAX_ATTEMPTS = 2;
 export const MAX_TOKENS = 8192;

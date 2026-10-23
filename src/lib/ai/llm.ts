@@ -16,7 +16,7 @@ function getLLMClient(): OpenAI {
   return client;
 }
 
-const DEFAULT_MODEL = "qwen/qwen3.8-flash";
+const DEFAULT_MODEL = "qwen/qwen3.7-plus";
 
 function getModel(): string {
   return process.env.LLM_MODEL || DEFAULT_MODEL;

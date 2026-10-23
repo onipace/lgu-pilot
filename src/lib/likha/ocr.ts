@@ -13,7 +13,7 @@
 
 const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const PDF_MODEL = 'google/gemini-2.5-flash';
-const IMAGE_MODEL = 'qwen/qwen3.8-flash';
+const IMAGE_MODEL = 'qwen/qwen3.7-plus';
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 2;
 const MAX_TOKENS = 8192;
