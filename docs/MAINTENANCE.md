@@ -67,6 +67,121 @@ CR-001 was verified to have zero references in AI module files (ELLA/OBRA/YALA/L
 
 ---
 
+## LLM Resilience Architecture (2026-10-23)
+
+Commit `d237e71` introduced a bulletproof LLM layer. All AI modules (ELLA, OBRA, YALA) go through this wrapper.
+
+### Fallback Model Chain
+
+`src/lib/ai/llm-resilient.ts` calls models in priority order and moves to the next when one fails:
+
+```
+1. qwen/qwen3.7-plus     (primary — production-capacity, most stable)
+2. qwen/qwen3.8-flash    (upgrade target when not rate-limited)
+3. qwen/qwen3-235b-a22b  (dense non-reasoning Qwen)
+4. qwen/qwen-plus        (older Qwen lineage)
+5. openai/gpt-4o-mini    (cross-vendor final fallback)
+```
+
+Configure via env: `LLM_MODEL_CHAIN=model1,model2,...` — order matters.
+
+### Circuit Breaker
+
+After **3 failures** in a model, it's marked "circuit open" for **5 minutes**. Requests skip it during cooldown. Half-open state lets one probe through to auto-recover.
+
+Env knobs:
+- `LLM_CIRCUIT_THRESHOLD` (default 3)
+- `LLM_CIRCUIT_COOLDOWN_MS` (default 300000 = 5 min)
+
+### Retry with Exponential Backoff
+
+Transient errors (429 rate-limit, 5xx, network) get **2 retries per model** with 500ms × 2^n backoff plus 20% jitter. Non-retryable errors (auth, unknown) skip to next model immediately.
+
+Env knob: `LLM_MAX_RETRIES` (default 2)
+
+### Silent Response Guard
+
+The reasoning-mode incident taught us that a model can spend tokens but emit zero content. Two layers detect this:
+
+1. **In `llm-resilient.ts`:** If a non-streaming `chatWithFallback` returns `content=""` but `completion_tokens > 100`, that model's result is discarded and the next model is tried. Circuit failure is recorded.
+
+2. **In `chat/route.ts` streaming:** After the SSE stream closes, if `fullResponse.length === 0` but `completion_tokens > 50`, the client receives an explicit `{"error": "AI service returned an empty response", "code": "SILENT_RESPONSE"}` event instead of silence — the UI shows a real message.
+
+### Provider Routing
+
+OpenRouter proxies to multiple backend providers. To skip flaky ones, set:
+
+```
+LLM_PROVIDER_PREFER=alibaba,novita,fireworks,together
+LLM_PROVIDER_IGNORE=
+```
+
+### Health Probe Endpoint
+
+**Admin-only:** `GET /api/health/llm`
+
+Returns:
+```json
+{
+  "status": "healthy",
+  "probeMs": 2263,
+  "probe": { "ok": true, "model": "qwen/qwen3.7-plus", "contentLength": 2 },
+  "chain": ["qwen/qwen3.7-plus", ...],
+  "circuits": {
+    "qwen/qwen3.7-plus": { "failures": 0, "open": false, "successStreak": 1 }
+  },
+  "config": { ... }
+}
+```
+
+Use for:
+- Post-incident diagnosis — check which models are in cooldown
+- Daily monitoring (cron `curl /api/health/llm` and alert on `status != "healthy"`)
+- Verifying chain order and provider routing after config changes
+
+### Admin Alert
+
+When the ENTIRE chain fails (`streamWithFallback` and `chatWithFallback` exhaust), `sendLLMFailureAlert()` emails `ALERT_EMAIL` (default: falls back to `NOTIFY_EMAIL` → `SMTP_USER`). Debounced to one email per route every 5 minutes to prevent storms.
+
+### Quick Diagnostic
+
+```bash
+# 1. Live model chain health (admin login required)
+ssh ecs "curl -s -c /tmp/ak.txt https://esangguni.bayanaihan.net/api/auth/login \
+    -X POST -H 'Content-Type: application/json' \
+    -d '{\"username\":\"ecapino@bayanaihan.com\",\"password\":\"<ADMIN_PW>\"}' > /dev/null && \
+    curl -s -b /tmp/ak.txt https://esangguni.bayanaihan.net/api/health/llm"
+
+# 2. See recent circuit trips
+ssh ecs "docker logs esangguni-pilot --tail 200 | grep 'llm-circuit'"
+
+# 3. See chain fallbacks that fired
+ssh ecs "docker logs esangguni-pilot --tail 200 | grep 'llm-resilient'"
+```
+
+### Failure Escalation Path (What Happens When a Model Breaks)
+
+```
+User sends chat request
+    ↓
+streamWithFallback tries model #1
+    ↓
+If model #1 fails with retryable error → 2 retries with backoff
+    ↓
+Still fails → circuit records failure → try model #2
+    ↓
+Repeat until success OR chain exhausted
+    ↓
+On success: stream returned, circuit records success
+On total failure: throws + admin alert email fired
+    ↓
+Chat route response-shape guard: even if a model "succeeded" but
+returned only reasoning → emits error SSE event, user sees real
+message instead of silence
+```
+
+---
+
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
 ### Symptom: Chat streams thinking-only, users see nothing (2026-10-23 second incident)
