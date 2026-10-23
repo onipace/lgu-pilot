@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import type { Stream } from "openai/streaming";
+import type { ChatCompletionChunk } from "openai/resources/chat/completions";
 
 let client: OpenAI | null = null;
 
@@ -36,10 +38,14 @@ export async function streamChatResponse(
 
   const stream = await llm.chat.completions.create({
     model: getModel(),
-    max_tokens: options?.maxTokens ?? 2048,
+    max_tokens: options?.maxTokens ?? 4096,
     temperature: 0.3,
     stream: true,
     stream_options: { include_usage: true }, // Request usage in final stream chunk
+    // OpenRouter extension — disable Qwen hybrid thinking mode so the model
+    // outputs the answer directly instead of exhausting max_tokens on reasoning
+    // tokens (which was causing "no response received" errors).
+    reasoning: { enabled: false },
     messages: [
       { role: "system", content: fullSystemPrompt },
       ...messages.map((m) => ({
@@ -47,7 +53,7 @@ export async function streamChatResponse(
         content: m.content,
       })),
     ],
-  });
+  } as any) as unknown as Stream<ChatCompletionChunk>;
 
   return stream;
 }
@@ -68,13 +74,15 @@ export async function chatCompletion(
 
   const response = await llm.chat.completions.create({
     model: getModel(),
-    max_tokens: options?.maxTokens ?? 4096,
+    max_tokens: options?.maxTokens ?? 8192,
     temperature: options?.temperature ?? 0.3,
+    // OpenRouter extension — disable Qwen hybrid thinking mode
+    reasoning: { enabled: false },
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-  });
+  } as any);
 
   return {
     content: response.choices[0]?.message?.content || "",
