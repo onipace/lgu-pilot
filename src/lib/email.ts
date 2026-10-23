@@ -334,6 +334,60 @@ export function isEmailConfigured(): boolean {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
+/**
+ * Bulletproof hardening: alert admin when all LLM models in the chain fail.
+ * Called from llm-resilient.ts on total chain exhaustion.
+ * Debounced: max one alert per ALERT_COOLDOWN_MS per route to prevent email storms.
+ */
+const alertTimestamps = new Map<string, number>();
+const ALERT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+export async function sendLLMFailureAlert(opts: {
+  route: string;
+  chain: string[];
+  errors: string[];
+  userId?: string;
+  userName?: string;
+}): Promise<boolean> {
+  const last = alertTimestamps.get(opts.route) || 0;
+  if (Date.now() - last < ALERT_COOLDOWN_MS) {
+    return false; // debounce
+  }
+  alertTimestamps.set(opts.route, Date.now());
+
+  const adminEmail =
+    process.env.ALERT_EMAIL ||
+    process.env.NOTIFY_EMAIL ||
+    process.env.SMTP_USER ||
+    "sb@pitogo.gov.ph";
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `eSANGGUNI ALERT: All LLM models failed on ${opts.route}`,
+    html: `
+      <div style="font-family: -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; padding: 20px; background: #fef2f2; border-radius: 8px; margin-bottom: 20px;">
+          <h2 style="color: #991b1b; margin: 0;">eSANGGUNI LLM Failure Alert</h2>
+          <p style="color: #666; margin: 8px 0 0; font-size: 13px;">All models in fallback chain exhausted</p>
+        </div>
+        <p><strong>Route:</strong> ${escapeHtml(opts.route)}</p>
+        <p><strong>Time:</strong> ${new Date().toISOString()}</p>
+        ${opts.userId ? `<p><strong>User:</strong> ${escapeHtml(opts.userName || "")} (${escapeHtml(opts.userId)})</p>` : ""}
+        <p><strong>Chain attempted:</strong></p>
+        <ul style="font-size: 13px; color: #555;">
+          ${opts.chain.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}
+        </ul>
+        <p><strong>Errors:</strong></p>
+        <pre style="background: #f9fafb; padding: 12px; border-radius: 4px; font-size: 11px; overflow-x: auto;">${escapeHtml(opts.errors.join("\n"))}</pre>
+        <p style="font-size: 13px; color: #666;">Check <a href="https://esangguni.bayanaihan.net/api/health/llm">/api/health/llm</a> for real-time circuit status.</p>
+        <p style="font-size: 12px; color: #999; margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
+          This alert is debounced to once per 5 minutes per route.
+        </p>
+      </div>
+    `,
+  });
+}
+
 // ── Helpers ────────────────────────────────────────────────
 
 function escapeHtml(text: string): string {

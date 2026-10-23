@@ -122,6 +122,7 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
     // Create a readable stream for the response
     const encoder = new TextEncoder();
     let fullResponse = "";
+    let thinkingChunks = 0;
 
     const readableStream = new ReadableStream({
       async start(controller) {
@@ -143,6 +144,7 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
             const content = delta?.content;
             const reasoning = delta?.reasoning;
             if (reasoning) {
+              thinkingChunks++;
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ thinking: reasoning })}\n\n`)
               );
@@ -153,6 +155,23 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
                 encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`)
               );
             }
+          }
+
+          // Response-shape guard: detect silent failures where the model consumed
+          // budget but produced no user-visible content. Emit an actionable error
+          // instead of silence so the client UI shows a real message.
+          if (fullResponse.length === 0 && (thinkingChunks > 0 || (usage && usage.completion_tokens > 50))) {
+            console.warn(
+              `[chat] Silent response detected — ${thinkingChunks} thinking chunks, ${usage?.completion_tokens ?? 0} completion tokens, 0 content. Model: ${process.env.LLM_MODEL || "default"}`
+            );
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  error: "AI service returned an empty response. Please try again — the fallback chain will retry with a different model.",
+                  code: "SILENT_RESPONSE",
+                })}\n\n`
+              )
+            );
           }
 
           // Post-stream citation validation for ELLA responses
