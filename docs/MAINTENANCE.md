@@ -69,6 +69,26 @@ CR-001 was verified to have zero references in AI module files (ELLA/OBRA/YALA/L
 
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
+### Symptom: All AI modules silent — clients see "no response received"
+
+**Where this appears:** ELLA, OBRA, YALA all hang with no output
+**Actual HTTP status:** 502 Bad Gateway from nginx
+
+**Root cause (2026-10-23 incident):** `qwen/qwen3.8-flash` on OpenRouter is a preview model with a shared public pool. Under traffic spikes, upstream returns HTTP 429 "Provider returned error". Chat route crashes, nginx sees no upstream response, returns 502 to clients.
+
+**Diagnostic command:**
+```bash
+ssh ecs "docker logs esangguni-pilot --tail 100 | grep -A5 'Provider returned error'"
+```
+Expected on failure: `error: { code: 429, message: 'Provider returned error' }`
+
+**Fix applied:** Reverted `LLM_MODEL` env + code defaults to `qwen/qwen3.7-plus` (production-capacity model). Commit `aab7d77`.
+
+**To re-enable flash later:**
+1. Test with: `docker exec esangguni-pilot node` — call OpenRouter chat.completions with `model:"qwen/qwen3.8-flash"` and observe for 24h
+2. Only switch back after stable capacity
+3. Consider adding BYOK (own Alibaba API key) at https://openrouter.ai/settings/integrations to bypass shared pool
+
 ### Symptom: "I encountered a connection error. Please check your internet connection and try again."
 
 **Where this appears:** ELLA, OBRA, YALA chat interfaces
