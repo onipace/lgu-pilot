@@ -1,16 +1,43 @@
+// src/lib/ai/response-mode.ts
+// ═══════════════════════════════════════════════════════════
+// RESPONSE MODE CONFIGURATION (ELLA & YALA chat)
+// ═══════════════════════════════════════════════════════════
+//
+// CANONICAL INTENT = wordLimit (human experience unit).
+// maxTokens field is @deprecated — it's retained only as an absolute
+// safety cap for non-calibrated callers (health probe, OBRA). The real
+// per-model token budget is derived at runtime via model-calibration.ts
+// using the formula: deriveMaxTokens(wordLimit, modelId).
+//
+// To adjust word caps during production: change wordLimit here and the
+// token budgets auto-derive across the entire fallback chain.
+
+import { deriveMaxTokens } from "./model-calibration";
+
 export type ResponseMode = 'brief' | 'standard' | 'detailed';
 
 export const RESPONSE_MODE_CONFIG: Record<ResponseMode, {
   label: string;
-  wordLimit: number;
+  wordLimit: number;            // CANONICAL: the human-facing ceiling
   citationCount: number;
   citationLimit: number | null; // null = no upper cap
+  /** @deprecated — safety cap only; real budget derives from wordLimit via calibration */
   maxTokens: number;
 }> = {
   brief:    { label: 'Brief',    wordLimit: 150, citationCount: 3, citationLimit: 3,    maxTokens: 400 },
   standard: { label: 'Standard', wordLimit: 300, citationCount: 4, citationLimit: 4,    maxTokens: 600 },
   detailed: { label: 'Detailed', wordLimit: 500, citationCount: 5, citationLimit: null, maxTokens: 1000 },
 };
+
+/**
+ * Get the calibrated max_tokens for a specific model given a response mode.
+ * Useful for health probes, logging, and any caller that needs to know the
+ * derived budget without going through the fallback loop.
+ */
+export function getEffectiveMaxTokens(mode: ResponseMode, model: string): number {
+  const cfg = RESPONSE_MODE_CONFIG[mode];
+  return deriveMaxTokens(cfg.wordLimit, model);
+}
 
 // Prompt suffix appended to the system prompt
 export function getResponseModeSuffix(mode: ResponseMode): string {

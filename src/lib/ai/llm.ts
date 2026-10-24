@@ -29,12 +29,16 @@ function getModel(): string {
 /**
  * Streaming chat with fallback chain, circuit breaker, retry, and provider routing.
  * All hardening logic lives in llm-resilient.ts.
+ *
+ * When wordLimit is provided, the token budget is auto-derived per model
+ * via the calibration table — the ceiling moves with the model across the chain.
+ * When only maxTokens is provided, it's used directly (backward compat for OBRA, LIKHA, LINAW).
  */
 export async function streamChatResponse(
   systemPrompt: string,
   messages: { role: "user" | "assistant"; content: string }[],
   ragContext?: string,
-  options?: { maxTokens?: number }
+  options?: { maxTokens?: number; wordLimit?: number }
 ): Promise<Stream<ChatCompletionChunk>> {
   const llm = getLLMClient();
   const fullSystemPrompt = ragContext
@@ -47,7 +51,8 @@ export async function streamChatResponse(
       { role: "system", content: fullSystemPrompt },
       ...messages.map((m) => ({ role: m.role, content: m.content })),
     ],
-    maxTokens: options?.maxTokens ?? 4096,
+    wordLimit: options?.wordLimit,
+    maxTokens: options?.maxTokens,
   });
 
   return stream;
@@ -55,11 +60,12 @@ export async function streamChatResponse(
 
 /**
  * Non-streaming chat with fallback chain.
+ * Supports wordLimit for calibrated per-model token budgets.
  */
 export async function chatCompletion(
   systemPrompt: string,
   userPrompt: string,
-  options?: { maxTokens?: number; temperature?: number }
+  options?: { maxTokens?: number; wordLimit?: number; temperature?: number }
 ): Promise<{
   content: string;
   usage?: {
@@ -77,7 +83,8 @@ export async function chatCompletion(
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    maxTokens: options?.maxTokens ?? 8192,
+    wordLimit: options?.wordLimit,
+    maxTokens: options?.maxTokens,
     temperature: options?.temperature ?? 0.3,
   });
 

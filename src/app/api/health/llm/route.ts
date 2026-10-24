@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth-middleware";
 import { getCircuitStatus } from "@/lib/ai/llm-resilient";
 import { chatCompletion } from "@/lib/ai/llm";
+import { getFullCalibrationTable, deriveMaxTokens } from "@/lib/ai/model-calibration";
 
 export const GET = withAuth(async () => {
   const startedAt = Date.now();
@@ -42,6 +43,13 @@ export const GET = withAuth(async () => {
   }
 
   const circuits = getCircuitStatus();
+  const calibration = getFullCalibrationTable();
+
+  // Show how Brief mode (150 words) maps to per-model token budget
+  const derivedBudget: Record<string, number> = {};
+  for (const model of chain) {
+    derivedBudget[model] = deriveMaxTokens(150, model);
+  }
 
   return NextResponse.json({
     status: probe.ok ? "healthy" : "degraded",
@@ -50,12 +58,15 @@ export const GET = withAuth(async () => {
     probe,
     chain,
     circuits,
+    calibration,
+    derivedBudget,
     config: {
       providerPrefer: process.env.LLM_PROVIDER_PREFER || "(default)",
       providerIgnore: process.env.LLM_PROVIDER_IGNORE || "(none)",
       circuitThreshold: parseInt(process.env.LLM_CIRCUIT_THRESHOLD || "3", 10),
       cooldownSec: parseInt(process.env.LLM_CIRCUIT_COOLDOWN_MS || "300000", 10) / 1000,
       maxRetries: parseInt(process.env.LLM_MAX_RETRIES || "2", 10),
+      graceRatio: parseFloat(process.env.WORD_CAP_GRACE_RATIO || "1.15"),
     },
   });
 });

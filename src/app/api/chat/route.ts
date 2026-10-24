@@ -14,6 +14,7 @@ import { validateAllCitations } from "@/lib/ai/citation-validator";
 import { getResponseModeSuffix, RESPONSE_MODE_CONFIG, type ResponseMode } from "@/lib/ai/response-mode";
 import { recordTokenUsage } from "@/lib/ai/token-meter";
 import { captureLLMCitations } from "@/lib/ai/citation-capture";
+import { countWords, getGraceRatio } from "@/lib/ai/model-calibration";
 import type { Citation } from "@/types";
 
 interface ChatRequestBody {
@@ -116,13 +117,22 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
     ];
 
     const stream = await streamChatResponse(fullSystemPrompt, messages, ragContext, {
-      maxTokens: modeConfig.maxTokens,
+      wordLimit: modeConfig.wordLimit,
     });
 
     // Create a readable stream for the response
     const encoder = new TextEncoder();
     let fullResponse = "";
     let thinkingChunks = 0;
+
+    // MODEL-CALIBRATED WORD ENFORCEMENT (belt-and-suspenders)
+    // The token budget is already derived per-model via calibration, but this
+    // counter guarantees the user experience: if words exceed the cap + grace
+    // (even when calibration is slightly off), the stream stops cleanly.
+    const wordCap = modeConfig.wordLimit;
+    const graceRatio = getGraceRatio(); // env-tunable, default 1.15
+    let accumulatedWords = 0;
+    let softStopTriggered = false;
 
     const readableStream = new ReadableStream({
       async start(controller) {
@@ -150,6 +160,24 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
               );
             }
             if (content) {
+              // Count words in this delta chunk
+              const deltaWords = countWords(content);
+              accumulatedWords += deltaWords;
+
+              // SOFT-STOP: enforce the word ceiling at the user-experience level
+              if (accumulatedWords > wordCap * graceRatio) {
+                // Don't enqueue the overflowing chunk — add a gentle ellipsis
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ text: "…" })}\n\n`)
+                );
+                fullResponse += "…";
+                softStopTriggered = true;
+                console.info(
+                  `[chat] Soft-stop triggered at ${accumulatedWords} words (cap=${wordCap}, grace=${graceRatio}) for mode=${responseMode}`
+                );
+                break;
+              }
+
               fullResponse += content;
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`)

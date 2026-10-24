@@ -28,6 +28,7 @@ import type {
   ChatCompletion,
 } from "openai/resources/chat/completions";
 import { sendLLMFailureAlert } from "../email";
+import { deriveMaxTokens } from "./model-calibration";
 
 // ═══════════════════════════════════════════════════════════
 // CONFIG
@@ -194,13 +195,21 @@ export interface ResilientParams {
   systemPrompt: string;
   messages: { role: "system" | "user" | "assistant"; content: string }[];
   maxTokens?: number;
+  wordLimit?: number;  // CANONICAL: word ceiling — derives maxTokens per model when present
   temperature?: number;
 }
 
-function buildBaseRequest(params: ResilientParams) {
+function buildBaseRequest(params: ResilientParams, model: string) {
   const routing = getProviderRouting();
+
+  // Derive max_tokens: wordLimit intent → calibration table → per-model budget.
+  // Falls back to explicit maxTokens for non-calibrated callers (OBRA, LIKHA, LINAW).
+  const effectiveMaxTokens = params.wordLimit
+    ? deriveMaxTokens(params.wordLimit, model)
+    : params.maxTokens ?? 4096;
+
   const req: any = {
-    max_tokens: params.maxTokens ?? 4096,
+    max_tokens: effectiveMaxTokens,
     temperature: params.temperature ?? 0.3,
     stream: true,
     stream_options: { include_usage: true },
@@ -240,7 +249,7 @@ export async function streamWithFallback(
     let attempt = 0;
     while (attempt <= getMaxRetries()) {
       try {
-        const request = { ...buildBaseRequest(params), model };
+        const request = { ...buildBaseRequest(params, model), model };
         const stream = (await llm.chat.completions.create(
           request as any
         )) as unknown as Stream<ChatCompletionChunk>;
@@ -300,9 +309,12 @@ export async function chatWithFallback(
     while (attempt <= getMaxRetries()) {
       try {
         const routing = getProviderRouting();
+        const effectiveMaxTokens = params.wordLimit
+          ? deriveMaxTokens(params.wordLimit, model)
+          : params.maxTokens ?? 8192;
         const request: any = {
           model,
-          max_tokens: params.maxTokens ?? 8192,
+          max_tokens: effectiveMaxTokens,
           temperature: params.temperature ?? 0.3,
           reasoning: { enabled: false },
           messages: params.messages,
@@ -381,7 +393,7 @@ export async function streamWithContentGuard(
     }
 
     try {
-      const request = { ...buildBaseRequest(params), model };
+      const request = { ...buildBaseRequest(params, model), model };
       const rawStream = (await llm.chat.completions.create(
         request as any
       )) as unknown as Stream<ChatCompletionChunk>;
