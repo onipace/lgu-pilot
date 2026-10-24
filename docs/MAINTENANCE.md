@@ -182,6 +182,84 @@ message instead of silence
 
 ---
 
+## Model-Calibrated Response Budget (2026-10-24) {#model-calibration}
+
+### Problem
+
+The fallback chain (5 models) shares a single `maxTokens` budget hardcoded against one model's tokenizer. When the circuit breaker swaps to a different model (e.g. `qwen3-235b-a22b` or `gpt-4o-mini`), the same token ceiling produces a different actual word count — the user-facing "Brief = 150 words" promise drifts across fallback candidates.
+
+### Solution Architecture
+
+Intent expressed in WORDS (the human experience unit). Token budget derived PER MODEL at request time.
+
+**Derivation formula:**
+```
+effectiveMaxTokens = ceil((wordCap × verbosityFactor) / wordsPerToken) + headroomTokens
+```
+
+**Calibration table** (`src/lib/ai/model-calibration.ts`):
+
+| Model | wordsPerToken | verbosityFactor | headroomTokens | Brief (150w) | Standard (300w) | Detailed (500w) |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| qwen/qwen3.7-plus | 0.73 | 1.05 | 24 | 240 tok | 456 tok | 744 tok |
+| qwen/qwen3.8-flash | 0.75 | 0.98 | 20 | 216 tok | 412 tok | 673 tok |
+| qwen/qwen3-235b-a22b | 0.66 | 1.15 | 36 | 297 tok | 560 tok | 908 tok |
+| qwen/qwen-plus | 0.70 | 1.08 | 28 | 259 tok | 494 tok | 803 tok |
+| openai/gpt-4o-mini | 0.78 | 1.02 | 18 | 214 tok | 407 tok | 671 tok |
+
+### Two Enforcement Layers
+
+1. **Calibration-derived `max_tokens`** — the API-level ceiling moves per model automatically inside `streamWithFallback`/`chatWithFallback`. If the chain falls from qwen3.7-plus to qwen3-235b-a22b, the new attempt gets 297 tokens instead of 240 — calibrated to the model's verbosity.
+
+2. **SSE soft-stop** — in `chat/route.ts`, `accumulatedWords` is tracked incrementally. If it exceeds `wordCap × graceRatio` (default 1.15), the stream stops and emits an ellipsis. This is the belt-and-suspenders guarantee when calibration is slightly off.
+
+### Production Tuning
+
+| What to change | How |
+|---|---|
+| Word caps (150/300/500) | Edit `RESPONSE_MODE_CONFIG.wordLimit` in `response-mode.ts` — all token budgets auto-derive |
+| Per-model calibration | Override at runtime via `LLM_CALIBRATION_JSON` env var (no code deploy needed) |
+| Grace ratio (soft-stop threshold) | `WORD_CAP_GRACE_RATIO` env var (default 1.15) |
+| Chain model list | `LLM_MODEL_CHAIN` env var — new models fall to `DEFAULT_CALIBRATION` until calibrated |
+
+Example env override:
+```
+LLM_CALIBRATION_JSON={"qwen/qwen3.7-plus":{"wordsPerToken":0.70,"verbosityFactor":1.00,"headroomTokens":20}}
+```
+
+### New Models in the Chain
+
+When adding a model to `LLM_MODEL_CHAIN` that isn't in the `CALIBRATION` table, it uses `DEFAULT_CALIBRATION` (wordsPerToken=0.72, verbosityFactor=1.10, headroomTokens=30). Calibrate it by running the live test script (`/tmp/test-calibration-v2.sh` on ECS) and adjusting from the observed `actualWords` / `completion_tokens`.
+
+### Observability
+
+`/api/health/llm` now returns `calibration` (full table) and `derivedBudget` (per-model max_tokens for Brief mode). Each SSE stream ends with a `_meta` event containing `actualWords`, `wordCap`, `graceRatio`, `softStopTriggered`, and `completion_tokens`.
+
+### Live Verification (2026-10-24)
+
+| Test | Mode | Cap | actualWords | Soft-stop | Result |
+|------|------|-----|-----------:|:---------:|:------:|
+| ELLA | Brief | 150 | 174 | True | PASS |
+| ELLA | Standard | 300 | 347 | True | PASS |
+| YALA | Detailed | 500 | 498 | False | PASS |
+
+Detailed mode shows ideal behavior: the calibration-derived budget (744 tokens) naturally produced 498 words — within the 500-word cap — without needing the hard stop. The model exhausted exactly 744 tokens, confirming the API enforces the ceiling.
+
+### Quarterly Calibration Review
+
+**Schedule:** Every 3 months (next review: 2027-01-24)
+
+**Procedure:**
+1. SSH to ECS, run `/tmp/test-calibration-v2.sh`
+2. Compare `actualWords` vs `wordCap` per mode — drift >10% means recalibration needed
+3. For each model in chain, compute measured ratio: `completion_tokens / actualWords`
+4. Update `CALIBRATION` table in `model-calibration.ts` or override via env var
+5. Commit, deploy, re-verify
+
+**Why quarterly:** OpenRouter periodically rotates upstream provider weights and model snapshots. A model's verbosity profile can shift after an API update without any code change on our side. The calibration absorbs this drift.
+
+---
+
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
 ### Symptom: Chat streams thinking-only, users see nothing (2026-10-23 second incident)
