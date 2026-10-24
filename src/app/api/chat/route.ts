@@ -297,6 +297,21 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
             });
           }
 
+          // Emit calibration summary (observable in test scripts and SSE consumers)
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({
+              _meta: {
+                responseMode,
+                wordCap,
+                graceRatio,
+                accumulatedWords,
+                softStopTriggered,
+                actualWords: accumulatedWords,
+                maxTokensUsed: usage?.completion_tokens,
+              }
+            })}\n\n`)
+          );
+
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
