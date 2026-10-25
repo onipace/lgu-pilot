@@ -260,6 +260,43 @@ Detailed mode shows ideal behavior: the calibration-derived budget (744 tokens) 
 
 ---
 
+## Session CR-002 (2026-10-25) — Word Ceilings + Tooltip {#cr-002}
+
+### Commits
+
+| SHA | Title |
+|-----|-------|
+| `f6b2dc3` | feat(CR-002): raise word ceilings to 250/500/800 + PILLAR hover tooltip |
+
+### Why
+
+Users reported ELLA/YALA answers felt cut off (visible "…" after 173 words) and inconclusive. Root causes: 150-word Brief floor too thin once ~40–60 words go to citations; the soft-stop rendered a truncation marker; the prompt suffix ("approximately X words") permitted early stops.
+
+### Changes
+
+1. **Word ceilings** in `src/lib/ai/response-mode.ts`: Brief 150→**250**, Standard 300→**500**, Detailed 500→**800**. All per-model token budgets auto-derived via calibration — new primary-model budgets: 384/744/1175 tokens.
+2. **Prompt suffix rewrite**: requires four parts — STATE rule, APPLY to LGU, RECOMMEND next step, CITE. "Reader must not need to ask a follow-up."
+3. **Clean-close soft-stop** in `src/app/api/chat/route.ts`: no more "…" emit; stream closes silently at the last accepted delta.
+4. **Hover tooltip** in `src/components/pillar/response-mode-toggle.tsx`: PILLAR-styled tooltip (matches Brain-icon pattern) showing word budget, citation count, and derived token ceiling per mode.
+
+### UAT (7/7 PASS — GO)
+
+Full report: `docs/UAT-REPORT-CR-002.md`. Key evidence: Brief 285 words ending in ".", 0 ellipsis events, Standard 574, Detailed 880 (pure calibration, 1175 tokens), OBRA score 35 unchanged, tooltip compiled in bundle `915-253dfcc189cba3d3.js`.
+
+### Tuning levers (no code change)
+
+| Lever | Where | Current |
+|-------|-------|---------|
+| Word caps | `RESPONSE_MODE_CONFIG.wordLimit` | 250/500/800 |
+| Grace threshold | `WORD_CAP_GRACE_RATIO` env | 1.15 |
+| Calibration override | `LLM_CALIBRATION_JSON` env | unset (defaults) |
+
+### Rollback
+
+`git revert f6b2dc3` → tar-pipe reverted files → `docker compose -p esangguni-pilot up -d --build --force-recreate esangguni` (~4 min).
+
+---
+
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
 ### Symptom: Chat streams thinking-only, users see nothing (2026-10-23 second incident)
