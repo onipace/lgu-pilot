@@ -162,22 +162,21 @@ export const POST = withUserAuth(async (request: NextRequest, { user }) => {
             if (content) {
               // Count words in this delta chunk
               const deltaWords = countWords(content);
-              accumulatedWords += deltaWords;
+              const projectedWords = accumulatedWords + deltaWords;
 
-              // SOFT-STOP: enforce the word ceiling at the user-experience level
-              if (accumulatedWords > wordCap * graceRatio) {
-                // Don't enqueue the overflowing chunk — add a gentle ellipsis
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ text: "…" })}\n\n`)
-                );
-                fullResponse += "…";
+              // SOFT-STOP: enforce the word ceiling at the user-experience level.
+              // CR-002: no visible ellipsis — the stream simply closes after the
+              // last successfully-enqueued delta. Users see a clean stop instead
+              // of a "…" marker that signals "cut off".
+              if (projectedWords > wordCap * graceRatio) {
                 softStopTriggered = true;
                 console.info(
-                  `[chat] Soft-stop triggered at ${accumulatedWords} words (cap=${wordCap}, grace=${graceRatio}) for mode=${responseMode}`
+                  `[chat] Soft-stop: would have gone to ${projectedWords} words (cap=${wordCap}, grace=${graceRatio}) for mode=${responseMode}. Closing stream cleanly at ${accumulatedWords} words.`
                 );
                 break;
               }
 
+              accumulatedWords = projectedWords;
               fullResponse += content;
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ text: content })}\n\n`)
