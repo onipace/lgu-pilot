@@ -15,6 +15,7 @@ import {
   Scale,
   LogOut,
   Shield,
+  ChevronRight,
 } from 'lucide-react';
 import { MODULE_CONFIG } from '@/lib/workshop-config';
 
@@ -94,9 +95,28 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <header className="border-b border-[hsl(var(--pillar-border))] bg-[hsl(var(--pillar-bg)/0.95)] backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-[hsl(var(--pillar-primary))]" />
-            <span className="text-lg font-bold tracking-wide text-white">eSANGGUNI</span>
+          <div className="flex items-center gap-4 min-w-0">
+            {/* Brand — clickable, returns to landing/home */}
+            <Link
+              href="/"
+              className="flex items-center gap-3 shrink-0 hover:opacity-90 transition-opacity"
+              aria-label="eSANGGUNI Home"
+            >
+              <Shield className="h-5 w-5 text-[hsl(var(--pillar-primary))]" />
+              <span className="text-lg font-bold tracking-wide text-white">eSANGGUNI</span>
+            </Link>
+
+            {/* Breadcrumb: Home > Menu (Menu = current) */}
+            <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 text-xs text-[hsl(var(--pillar-muted))]">
+              <Link
+                href="/"
+                className="hover:text-[hsl(var(--pillar-text))] transition-colors"
+              >
+                Home
+              </Link>
+              <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />
+              <span className="font-semibold text-[hsl(var(--pillar-text))]">Menu</span>
+            </nav>
           </div>
 
           <div className="flex items-center gap-4">

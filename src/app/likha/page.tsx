@@ -13,7 +13,7 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { Download, Loader2, Camera, FolderOpen, Paperclip, ArrowLeft } from 'lucide-react';
+import { Download, Loader2, Camera, FolderOpen, Paperclip, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AgentPipeline from '@/components/agent-pipeline';
 import ActivityFeed from '@/components/activity-feed';
@@ -612,10 +612,34 @@ export default function LikhaPage() {
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Shell header — foundation tokens */}
         <div>
-          <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[hsl(var(--pillar-muted))] transition-colors hover:text-[hsl(var(--pillar-text))]">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Menu
+          {/* Brand — clickable, returns to landing/home */}
+          <Link
+            href="/"
+            className="mb-3 inline-block text-sm font-bold tracking-wider text-[hsl(var(--pillar-gold))] hover:opacity-80 transition-opacity"
+            aria-label="eSANGGUNI Home"
+          >
+            eSANGGUNI
           </Link>
+          {/* Breadcrumb: Home > Menu > Current */}
+          <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-[hsl(var(--pillar-muted))]">
+            <Link
+              href="/"
+              className="hover:text-[hsl(var(--pillar-text))] transition-colors"
+              aria-label="Home (Landing)"
+            >
+              Home
+            </Link>
+            <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />
+            <Link
+              href="/dashboard"
+              className="hover:text-[hsl(var(--pillar-text))] transition-colors"
+              aria-label="Back to Menu"
+            >
+              Menu
+            </Link>
+            <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />
+            <span className="text-[hsl(var(--pillar-text))]">L.I.K.H.A.</span>
+          </nav>
           <h1 className="text-3xl font-black tracking-widest">L.I.K.H.A.</h1>
           <p className="mt-2 text-xs text-[hsl(var(--pillar-muted))]">
             Legislative Insight &amp; Knowledge Hub for Archives — Digitization &amp; Archive of

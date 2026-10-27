@@ -336,9 +336,13 @@ export default function LandingPage() {
             {/* Brand */}
             <div className="md:col-span-2">
               <div className="mb-4">
-                <span className="text-lg font-black tracking-widest text-[hsl(var(--pillar-text))]">
+                <Link
+                  href="/"
+                  className="text-lg font-black tracking-widest text-[hsl(var(--pillar-text))] hover:opacity-80 transition-opacity inline-block"
+                  aria-label="eSANGGUNI Home"
+                >
                   eSANGGUNI
-                </span>
+                </Link>
               </div>
               <p className="text-sm text-[hsl(var(--pillar-muted))] max-w-md">
                 AI-powered smart legislation platform for Philippine Local Government Units. Helping LGUs research, draft, and codify ordinances faster and more accurately.

@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Play, ArrowLeft } from 'lucide-react';
+import { Play, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AgentPipeline from '@/components/agent-pipeline';
 import ActivityFeed from '@/components/activity-feed';
@@ -854,10 +854,34 @@ export default function LinawPage() {
     <div className="min-h-screen bg-[#0F1729] px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl space-y-8">
         <header>
-          <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#94A3B8] transition-colors hover:text-white">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Menu
+          {/* Brand — clickable, returns to landing/home */}
+          <Link
+            href="/"
+            className="mb-3 inline-block text-sm font-bold tracking-wider text-[#F59E0B] hover:opacity-80 transition-opacity"
+            aria-label="eSANGGUNI Home"
+          >
+            eSANGGUNI
           </Link>
+          {/* Breadcrumb: Home > Menu > Current */}
+          <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-[#94A3B8]">
+            <Link
+              href="/"
+              className="hover:text-white transition-colors"
+              aria-label="Home (Landing)"
+            >
+              Home
+            </Link>
+            <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />
+            <Link
+              href="/dashboard"
+              className="hover:text-white transition-colors"
+              aria-label="Back to Menu"
+            >
+              Menu
+            </Link>
+            <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />
+            <span className="text-white">L.I.N.A.W.</span>
+          </nav>
           <h1 className="text-3xl font-black tracking-widest">L.I.N.A.W.</h1>
           <p className="mt-2 text-sm text-[#94A3B8]">
             Legislative Indexing for Normalized &amp; Accessible Wisdom — Library &amp; Codification
