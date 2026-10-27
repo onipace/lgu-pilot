@@ -297,6 +297,16 @@ Full report: `docs/UAT-REPORT-CR-002.md`. Key evidence: Brief 285 words ending i
 
 ---
 
+## Source-of-Truth Reconciliation (2026-10-27) {#reconcile-2026-10-27}
+
+A full line-ending-normalized md5 comparison of all 236 source files (`src/`, `prisma/`, Dockerfile, compose, next.config, package.json) between the local repo and the ECS deploy directory found **15 drifted files** — production-side hotfixes (OBRA route model labels, page shells, pillar-header, site-config, LIKHA/LINAW ocr.ts) applied directly on ECS via tar-pipe but never back-ported to git.
+
+**Fix:** commit `2a02d89` pulled the 15 production files into the local tree and pushed to GitHub. Local repo == ECS source == Docker-built container, all byte-identical (normalized). Pre-reconcile local versions: `workspace/backup-local-pre-reconcile/local-drift-backup.tar`.
+
+**Lesson:** after any ECS tar-pipe hotfix, immediately back-port to git. The ECS directory is not a git repo, so file drift is silent until you checksum-compare. Verification command (both sides): `find src prisma -type f -not -path '*/data/documents/*' | sort | while read f; do printf "%s  " "$f"; tr -d '\r' < "$f" | md5sum | cut -d' ' -f1; done` — then diff.
+
+---
+
 ## Troubleshooting Playbook {#troubleshooting-playbook}
 
 ### Symptom: Chat streams thinking-only, users see nothing (2026-10-23 second incident)
